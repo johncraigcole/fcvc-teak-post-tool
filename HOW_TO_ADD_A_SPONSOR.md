@@ -27,13 +27,15 @@ If the logo is wrong (too small, not a PNG, no transparent background), the app 
 
    ```json
    [
-     { "name": "Acme Hardware", "logo": "logos/acme-hardware.png", "active": true },
-     { "name": "Smith Dental", "logo": "logos/smith-dental.png", "active": true },
-     { "name": "Jones Plumbing", "logo": "logos/jones-plumbing.png", "active": true }
+     { "name": "Acme Hardware", "logo": "logos/acme-hardware.png", "tier": "Gold", "active": true },
+     { "name": "Smith Dental", "logo": "logos/smith-dental.png", "tier": "Silver", "active": true },
+     { "name": "Jones Plumbing", "logo": "logos/jones-plumbing.png", "tier": "Bronze", "active": true }
    ]
    ```
 
    ⚠️ **Watch the commas.** Every line ends with a comma **except the last one**. If you add a line at the end, put a comma after the line before it.
+
+   **`"tier"`** is the sponsorship level. It's shown as a ribbon on the Sponsor Thank-You post (e.g. "SILVER SPONSOR") and next to the name in the dropdown. `Gold`, `Silver`, `Bronze` and `Platinum` get matching metallic ribbons; any other word (e.g. `"Community"`) gets a green ribbon. Leave `"tier"` out entirely to show no ribbon.
 
 4. Click **Commit changes…**, then **Commit changes** again.
 
@@ -53,13 +55,9 @@ Don't delete them. That keeps the history. Change `"active": true` to `"active":
 
 They disappear from the dropdown but stay in the file.
 
-## Optional: backing plate
+## Optional: white logos
 
-Some logos are hard to see on top of a photo. The app puts a white plate behind sponsor logos on photos by default. You can change that per sponsor by adding `"plate"`:
-
-- `"plate": "light"`: white plate (default on photos)
-- `"plate": "dark"`: dark plate. Use this for **white or very light logos**; it also adds a dark plate on the white sponsor bar so the logo stays visible.
-- `"plate": "none"`: no plate
+Sponsor logos always sit in a white box with a gold border. If a sponsor's logo is **white or very light**, add `"plate": "dark"` so the box is dark instead:
 
 ```json
 { "name": "Night Owl Cafe", "logo": "logos/night-owl-cafe.png", "active": true, "plate": "dark" }

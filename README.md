@@ -13,15 +13,25 @@ Turns game photos into consistently branded Instagram and Facebook images, with 
 ## For volunteers: making a post
 
 1. Open the app on your phone or computer.
-2. **Add photos.** Pick one, or several from the same game (batch mode).
-3. **Pick a template:**
-   - **Game Day Result**: score, opponent, date and "Presented by [sponsor]"
-   - **Player / Moment Highlight**: a short headline like "Big save!"
-   - **Sponsor Thank-You**: big sponsor logo and a thank-you message
-4. **Pick the sponsor** and fill in the details.
+2. **Pick a template:**
+
+   | Template | What it shows | Photos |
+   |---|---|---|
+   | **Game Day Result** | Score ribbons (TEAK vs opponent), date, "Presented by [sponsor]" | 1 per post |
+   | **Player / Moment Highlight** | Your headline (e.g. "Big save!") over a big photo | 1 per post |
+   | **Photo Collage** | 2–4 photos in one post. Portrait and landscape can mix | 2–4 per post |
+   | **Meet the Team / Coaches** | Photo with up to 3 name ribbons (role + name). No sponsor | 1 per post |
+   | **Next Game** | "VS opponent", date, time and venue | optional |
+   | **Tournament Result** | Event name, finish ribbon (gold/silver/bronze colours) and record | 1 per post |
+   | **Sponsor Thank-You** | Sponsor tier ribbon (e.g. "SILVER SPONSOR"), big logo, thank-you message | none |
+
+3. **Add photos.** Pick one, or several from the same game (batch mode).
+4. **Pick the sponsor** and fill in the details. Headlines are optional; each template has a default (e.g. "Meet the coaches"). Long headlines split over two lines automatically. To choose where it splits, type a `|`, e.g. `Meet the|Team`.
 5. **Adjust the crop** in the preview: drag to move, pinch (or use the slider) to zoom. Switch between **Feed / Story / Square** at the top; each size has its own crop. In Story, the pink bands show where Instagram puts its own buttons. They aren't in the final image.
-6. With several photos, tap a thumbnail to adjust each one's crop. Template, sponsor and details apply to all of them.
-7. Tick the sizes you want and tap **Create images**, or **Create for all N photos**.
+   - **Show whole photo (no cropping)** fits the entire photo in the window over a blurred copy of itself. It's useful for a landscape shot in a tall post.
+6. With several photos, tap a thumbnail to adjust each one's crop. In a collage, tap a photo in the preview to select it. Template, sponsor and details apply to all of them.
+   - **Collages** use photos in order: with 4 photos per collage, 10 photos make collages of 4, 4 and 2.
+7. Tick the sizes you want and tap **Create images**, or **Create for all**.
 8. Save them:
    - **On a phone:** tap **Save to Photos / Share** and choose *Save Images*.
    - **On a computer:** **Download** (separate files) or **Download ZIP**.
@@ -51,53 +61,68 @@ Everything is changed through the GitHub website. Changes are live a minute or t
 |---|---|
 | Add / retire a sponsor | [HOW_TO_ADD_A_SPONSOR.md](HOW_TO_ADD_A_SPONSOR.md) |
 | Club name, colours, fonts, hashtags, sport | `config.json` |
+| **Season** ("2026 – 2027") and the small top line ("FCVC · TEAK 16U") | `config.json` → `labels` → `season` / `eyebrow` |
+| Default headlines ("FINAL SCORE", "MEET THE COACHES"…) | `config.json` → `headlines` |
+| Other wording on the images ("PRESENTED BY", the thank-you message…) | `config.json` → `labels` |
 | Caption wording | `config.json` → `captions` |
-| Wording on the images ("FULL TIME", "PRESENTED BY"…) | `config.json` → `labels` |
 | Club logo | replace `logos/club-logo.png` (same file name) |
+
+**New season checklist:** update `labels.season`, the `eyebrow` if the age group changes, the club logo if it shows the year, and each sponsor's `tier` in `sponsors.json`.
 
 ### `config.json` reference
 
 ```jsonc
 {
-  "clubName": "Club Name",          // app title, [Club] in captions
-  "clubShortName": "CLUB",          // shown as "CLUB VS RIVERSIDE" on result posts
+  "clubName": "Forest City Volleyball Club",  // [Club] in captions
+  "clubShortName": "TEAK",          // app title and the "our score" ribbon
   "clubLogo": "logos/club-logo.png",
-  "clubLogoPlate": "none",          // optional: "light" / "dark" plate behind the club logo
-  "sport": "Soccer",                // [Sport] in captions
-  "hashtags": ["#ClubName", "#GameDay"],   // [Hashtags] = all, [ClubHashtag] = first one without "#"
+  "sport": "Volleyball",            // [Sport] in captions
+  "hashtags": ["#TEAK16U", "#FCVC"], // [Hashtags] = all, [ClubHashtag] = first one without "#"
 
   "colors": {
-    "primary": "#12284C",   // frame, text on white
-    "secondary": "#FFFFFF", // sponsor bar and thank-you card
-    "accent": "#F5B700",    // labels, highlights
-    "text": "#FFFFFF",      // big score / headline text
-    "dark": "#0A1628"       // shading behind text on photos
+    "background": "#0A0A0A", // post background
+    "primary": "#2F5233",    // green ribbons, app buttons
+    "secondary": "#FFFFFF",  // sponsor logo boxes
+    "accent": "#C8A15A",     // gold lines, labels, second headline line
+    "text": "#F3EEE2"        // cream headline and names
   },
 
   "fonts": {
-    "display": "Anton",     // scores and headlines
-    "body": "Inter",        // small text
-    "googleFontsUrl": "https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;600;800&display=swap"
+    "display": "Domine",     // serif: headlines, scores, names
+    "body": "Poppins",       // spaced capitals and small text
+    "googleFontsUrl": "https://fonts.googleapis.com/css2?family=Domine:wght@700&family=Poppins:wght@500;600&display=swap"
   },
 
-  "labels": { "result": "FULL TIME", "presentedBy": "PRESENTED BY", "thankYou": "THANKS TO OUR SPONSOR", "highlight": "HIGHLIGHT" },
+  "labels": {
+    "eyebrow": "FCVC · TEAK 16U",   // small gold line above every headline
+    "season": "2026 – 2027",        // footer of every post
+    "presentedBy": "PRESENTED BY",
+    "supportLine": "FOR SUPPORTING OUR TEAK 16U TEAM",
+    "sponsorWord": "SPONSOR",       // under the tier on the thank-you ribbon
+    "thankYouMessage": "Your support helps get our team on the road…",
+    "tournamentRibbon": "FINAL STANDING"  // used when no dates & location are entered
+  },
+
+  "headlines": { "game-day": "FINAL SCORE", "meet-team": "MEET THE COACHES", "…": "…" },
 
   "captions": {
     "game-day":  ["Great effort today vs [Opponent]! Final: [Score]. …"],
-    "highlight": ["…"],
-    "thank-you": ["…"]
+    "…": ["…"]
   }
 }
 ```
 
-**Caption placeholders:** `[Opponent]` `[Score]` `[Sponsor]` `[Date]` `[Headline]` `[Club]` `[Hashtags]` `[ClubHashtag]` `[Sport]`. Add as many caption options per template as you like. Volunteers choose from a dropdown. A placeholder whose detail is blank stays visible as e.g. `[Opponent]`, so volunteers can see what's missing.
+Template keys: `game-day`, `highlight`, `collage`, `meet-team`, `next-game`, `tournament`, `thank-you`.
+
+**Caption placeholders:** `[Opponent]` `[Score]` `[Sponsor]` `[Tier]` `[Date]` `[Time]` `[Venue]` `[Headline]` `[Placing]` `[Record]` `[Club]` `[Hashtags]` `[ClubHashtag]` `[Sport]`. Add as many caption options per template as you like. Volunteers choose from a dropdown. A placeholder whose detail is blank stays visible as e.g. `[Opponent]`, so volunteers can see what's missing.
 
 **Using the club's own font files** instead of Google Fonts: upload them to `fonts/`, remove `googleFontsUrl`, and add:
 
 ```json
 "files": [
-  { "family": "Club Display", "url": "fonts/club-display.woff2", "weight": 400 },
-  { "family": "Club Sans", "url": "fonts/club-sans-bold.woff2", "weight": 800 }
+  { "family": "Club Display", "url": "fonts/club-display-bold.woff2", "weight": 700 },
+  { "family": "Club Sans", "url": "fonts/club-sans-medium.woff2", "weight": 500 },
+  { "family": "Club Sans", "url": "fonts/club-sans-semibold.woff2", "weight": 600 }
 ]
 ```
 
@@ -111,7 +136,7 @@ then set `"display": "Club Display"` and `"body": "Club Sans"`.
 }
 ```
 
-The PNG must be exactly the output size (1080×1350, 1080×1920 or 1080×1080). It replaces the built-in frame for that template and size. Text and logos are still drawn on top.
+The PNG must be exactly the output size (1080×1350, 1080×1920 or 1080×1080). It's drawn on top of the finished post for that template and size, so leave it transparent wherever the photo, text and logos should show through.
 
 ### Logo rules
 

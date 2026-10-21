@@ -34,6 +34,7 @@
         <input type="range" id="zoom" min="1" max="5" step="0.01" value="1" aria-label="Zoom">
         <button type="button" class="btn small ghost" id="resetCrop">Reset</button>
       </div>
+      <label class="check whole" id="wholeRow"><input type="checkbox" id="wholePhoto"> Show whole photo (no cropping)</label>
       <p class="hint" id="cropHint">Drag the photo to reposition. Pinch, scroll or use the slider to zoom. Each size has its own crop.</p>
       <div class="thumbs" id="thumbs" aria-label="Photos"></div>
     </section>
@@ -41,20 +42,20 @@
     <!-- Controls -->
     <section class="controls-col">
       <div class="card">
-        <h2><span class="step">1</span> Photos</h2>
+        <h2><span class="step">1</span> Template</h2>
+        <div class="seg" id="templatePicker" role="radiogroup" aria-label="Template"></div>
+      </div>
+
+      <div class="card" id="photoCard">
+        <h2><span class="step">2</span> Photos</h2>
         <label class="btn primary block file-btn">
           <input type="file" id="fileInput" accept="image/*" multiple>
           <span id="addLabel">Add photos</span>
         </label>
-        <p class="muted small" id="photoCount">Pick one photo, or several from the same game for batch mode.</p>
+        <p class="muted small" id="photoCount"></p>
       </div>
 
-      <div class="card">
-        <h2><span class="step">2</span> Template</h2>
-        <div class="seg" id="templatePicker" role="radiogroup" aria-label="Template"></div>
-      </div>
-
-      <div class="card">
+      <div class="card" id="sponsorCard">
         <h2><span class="step">3</span> Sponsor</h2>
         <select id="sponsor" aria-label="Sponsor"></select>
         <div id="logoWarnings" class="warn" hidden></div>
@@ -63,23 +64,48 @@
       <div class="card">
         <h2><span class="step">4</span> Details</h2>
         <div class="fields">
-          <label data-field="date">Game date
+          <label data-field="collageCount">Photos per collage
+            <select id="f-collageCount">
+              <option value="2">2 photos</option>
+              <option value="3">3 photos</option>
+              <option value="4">4 photos</option>
+            </select>
+          </label>
+          <label data-field="headline"><span id="headlineLabel">Headline</span> <span class="opt">(optional)</span>
+            <input type="text" id="f-headline" autocomplete="off" maxlength="40">
+          </label>
+          <label data-field="placing">Finish
+            <input type="text" id="f-placing" placeholder="e.g. Gold medal, 2nd place" autocomplete="off" maxlength="24">
+          </label>
+          <label data-field="record">Record <span class="opt">(optional)</span>
+            <input type="text" id="f-record" placeholder="e.g. 5–1" autocomplete="off" maxlength="12">
+          </label>
+          <label data-field="date">Date
             <input type="date" id="f-date">
           </label>
-          <label data-field="opponent">Opponent <span class="opt" data-opt-for="highlight">(optional)</span>
+          <label data-field="time">Time
+            <input type="time" id="f-time">
+          </label>
+          <label data-field="opponent">Opponent <span class="opt" data-opt-for="highlight collage">(optional)</span>
             <input type="text" id="f-opponent" placeholder="e.g. Riverside" autocomplete="off" maxlength="40">
+          </label>
+          <label data-field="venue">Venue
+            <input type="text" id="f-venue" placeholder="e.g. Western Rec Centre" autocomplete="off" maxlength="40">
           </label>
           <div data-field="score" class="score-row">
             <label>Our score <input type="text" id="f-ourScore" inputmode="numeric" maxlength="3" placeholder="3"></label>
             <span class="dash">–</span>
             <label>Their score <input type="text" id="f-theirScore" inputmode="numeric" maxlength="3" placeholder="1"></label>
           </div>
-          <label data-field="headline">Headline
-            <input type="text" id="f-headline" placeholder="e.g. Big save!" autocomplete="off" maxlength="40">
+          <label data-field="subtext"><span id="subtextLabel">Small line</span> <span class="opt">(optional)</span>
+            <input type="text" id="f-subtext" autocomplete="off" maxlength="60">
           </label>
-          <label data-field="subtext">Small line <span class="opt">(optional)</span>
-            <input type="text" id="f-subtext" placeholder="Leave blank to show opponent and date" autocomplete="off" maxlength="60">
-          </label>
+          <div data-field="people" class="people">
+            <p class="muted small">Name ribbons (up to 3; leave unused ones blank)</p>
+            <div class="person"><input type="text" id="f-p1Role" placeholder="Role, e.g. Head coach" maxlength="24"><input type="text" id="f-p1Name" placeholder="Name" maxlength="28"></div>
+            <div class="person"><input type="text" id="f-p2Role" placeholder="Role" maxlength="24"><input type="text" id="f-p2Name" placeholder="Name" maxlength="28"></div>
+            <div class="person"><input type="text" id="f-p3Role" placeholder="Role" maxlength="24"><input type="text" id="f-p3Name" placeholder="Name" maxlength="28"></div>
+          </div>
         </div>
       </div>
 

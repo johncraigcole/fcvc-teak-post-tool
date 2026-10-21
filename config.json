@@ -1,43 +1,71 @@
 {
-  "clubName": "Club Name",
-  "clubShortName": "CLUB",
+  "clubName": "Forest City Volleyball Club",
+  "clubShortName": "TEAK",
   "clubLogo": "logos/club-logo.png",
-  "sport": "Soccer",
-  "hashtags": ["#ClubName", "#GameDay"],
+  "sport": "Volleyball",
+  "hashtags": ["#TEAK16U", "#FCVC", "#ForestCityVolleyball"],
 
   "colors": {
-    "primary": "#12284C",
+    "background": "#0A0A0A",
+    "primary": "#2F5233",
     "secondary": "#FFFFFF",
-    "accent": "#F5B700",
-    "text": "#FFFFFF",
-    "dark": "#0A1628"
+    "accent": "#C8A15A",
+    "text": "#F3EEE2"
   },
 
   "fonts": {
-    "display": "Anton",
-    "body": "Inter",
-    "googleFontsUrl": "https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;600;800&display=swap"
+    "display": "Domine",
+    "body": "Poppins",
+    "googleFontsUrl": "https://fonts.googleapis.com/css2?family=Domine:wght@700&family=Poppins:wght@500;600&display=swap"
   },
 
   "labels": {
-    "result": "FULL TIME",
+    "eyebrow": "FCVC · TEAK 16U",
+    "season": "2026 – 2027",
     "presentedBy": "PRESENTED BY",
-    "thankYou": "THANKS TO OUR SPONSOR",
-    "highlight": "HIGHLIGHT"
+    "supportLine": "FOR SUPPORTING OUR TEAK 16U TEAM",
+    "sponsorWord": "SPONSOR",
+    "thankYouMessage": "Your support helps get our team on the road to new opportunities, growth and amazing experiences.",
+    "tournamentRibbon": "FINAL STANDING"
+  },
+
+  "headlines": {
+    "game-day": "FINAL SCORE",
+    "highlight": "GAME HIGHLIGHT",
+    "collage": "GAME DAY",
+    "meet-team": "MEET THE COACHES",
+    "next-game": "NEXT GAME",
+    "tournament": "TOURNAMENT RESULT",
+    "thank-you": "THANK YOU"
   },
 
   "captions": {
     "game-day": [
       "Great effort today vs [Opponent]! Final: [Score]. Thanks to [Sponsor] for supporting our club. [Hashtags] #[Sport]",
-      "Full time: [Club] [Score] [Opponent]. Proud of the whole team! Presented by [Sponsor]. [Hashtags]",
-      "Game day vs [Opponent] ([Date]). Final score [Score]. Huge thanks to [Sponsor]! [Hashtags] #[Sport]"
+      "Full time: [Club] [Score] [Opponent]. Proud of the whole team! Presented by [Sponsor]. [Hashtags]"
     ],
     "highlight": [
       "[Headline] What a moment vs [Opponent]! Thanks to [Sponsor] for backing our club. [Hashtags] #[Sport]",
       "[Headline] [Hashtags] Proudly supported by [Sponsor]."
     ],
+    "collage": [
+      "Game day vs [Opponent]! Thanks to [Sponsor] for supporting our club. [Hashtags] #[Sport]",
+      "Some of our favourite moments from [Date]. [Hashtags]"
+    ],
+    "meet-team": [
+      "[Headline]! We're excited for the season ahead. [Hashtags] #[Sport]",
+      "Say hello to the people behind TEAK 16U. [Hashtags]"
+    ],
+    "next-game": [
+      "Next up: [Opponent] on [Date] at [Time], [Venue]. Come cheer us on! Presented by [Sponsor]. [Hashtags] #[Sport]",
+      "Game day is coming! TEAK vs [Opponent], [Date] · [Time] · [Venue]. [Hashtags]"
+    ],
+    "tournament": [
+      "[Headline]: [Placing]! Record [Record]. So proud of this team. Thanks to [Sponsor] for the support. [Hashtags] #[Sport]",
+      "What a weekend at [Headline]. [Placing] finish! [Hashtags]"
+    ],
     "thank-you": [
-      "A huge thank you to [Sponsor] for supporting [Club] this season! [Hashtags] #[Sport]",
+      "A huge thank you to [Sponsor], our [Tier] sponsor, for supporting TEAK 16U this season! [Hashtags] #[Sport]",
       "We couldn't do it without our sponsors. Thank you, [Sponsor]! [Hashtags]"
     ]
   }

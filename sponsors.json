@@ -1,5 +1,5 @@
 [
-  { "name": "Acme Hardware", "logo": "logos/acme-hardware.png", "active": true },
-  { "name": "Smith Dental", "logo": "logos/smith-dental.png", "active": true },
-  { "name": "Riverbend Bakery", "logo": "logos/riverbend-bakery.png", "active": false }
+  { "name": "Acme Hardware", "logo": "logos/acme-hardware.png", "tier": "Gold", "active": true },
+  { "name": "Smith Dental", "logo": "logos/smith-dental.png", "tier": "Silver", "active": true },
+  { "name": "Riverbend Bakery", "logo": "logos/riverbend-bakery.png", "tier": "Bronze", "active": false }
 ]
