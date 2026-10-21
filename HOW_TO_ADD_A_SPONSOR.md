@@ -55,13 +55,20 @@ Don't delete them. That keeps the history. Change `"active": true` to `"active":
 
 They disappear from the dropdown but stay in the file.
 
-## Optional: white logos
+## Logos on the black background
 
-Sponsor logos always sit in a white box with a gold border. If a sponsor's logo is **white or very light**, add `"plate": "dark"` so the box is dark instead:
+On the **Sponsor Thank-You** post, the logo sits in a gold-framed box that is **transparent by default**, so the logo sits straight on the black. (On other posts the "Presented by" logo box is white.) A logo with **dark lettering** will be hard to read on black, so:
+
+- **Per post:** volunteers can pick the box colour in the app. Under Details, **Logo box background** offers Transparent, White, Black, Club green, Club gold or any **Custom colour**.
+- **Per sponsor (recommended):** set the colour that suits each logo once, with `"background"`, and the app uses it automatically. Use `"transparent"` or a colour code like `"#FFFFFF"` (white):
 
 ```json
-{ "name": "Night Owl Cafe", "logo": "logos/night-owl-cafe.png", "active": true, "plate": "dark" }
+{ "name": "Smith Dental", "logo": "logos/smith-dental.png", "tier": "Silver", "active": true, "background": "#FFFFFF" }
 ```
+
+- **Best of all:** ask the sponsor for a **white / light version** of their logo (most companies have a "reversed" logo for dark backgrounds). It then looks great on the transparent box.
+
+If a logo is **white or very light**, also add `"plate": "dark"` so the white "Presented by" boxes on other posts turn dark and the logo stays visible there.
 
 ## Replacing a sponsor's logo
 

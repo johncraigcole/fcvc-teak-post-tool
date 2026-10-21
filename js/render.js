@@ -131,7 +131,7 @@ export const TEMPLATES = {
     photos: 'none',
     headline: { label: 'Headline', placeholder: 'e.g. Thank you' },
     // Every piece of text on this post can be changed per post; blank uses config.json.
-    fields: ['headline', 'eyebrow', 'tySupport', 'tyTier', 'tyWord', 'tyMessage', 'season', 'date'],
+    fields: ['headline', 'eyebrow', 'tySupport', 'tyTier', 'tyWord', 'logoBg', 'tyMessage', 'season', 'date'],
     // Laid out like the club's sponsor post: support line, tier ribbon, logo box and
     // message, spread evenly down the page.
     draw(ctx, L, o, box) {
@@ -182,7 +182,7 @@ export const TEMPLATES = {
         ribbon(ctx, L, L.W / 2 - w / 2, y, w, ribbonH, medalStyle(d.sponsorTier), null, d.sponsorTier.toUpperCase(), 68, d.sponsorWord.toUpperCase());
         y += ribbonH + gap;
       }
-      logoBox(ctx, L, o, L.W / 2 - w / 2 + 10 * s, y, w - 20 * s, logoH, 0.66);
+      logoBox(ctx, L, o, L.W / 2 - w / 2 + 10 * s, y, w - 20 * s, logoH, 0.66, d.logoBg);
       y += logoH + gap;
       ctx.fillStyle = brand.colors.text;
       msg.lines.forEach((line, i) => spaced(ctx, L, line, L.W / 2, y + msgSize * 0.75 + i * msgLine, 'body', 500, msgSize, msgSp, 'center'));
@@ -566,11 +566,18 @@ function sponsorRow(ctx, L, o, y, leftText = '') {
 }
 
 // White box with a gold double border holding the sponsor logo (or the name as text).
-function logoBox(ctx, L, o, x, y, w, h, fill) {
+// bg: the box colour ('transparent' lets the logo sit on the post's background). Without it,
+// "Presented by" boxes are white, or dark for sponsors set to "plate": "dark".
+function logoBox(ctx, L, o, x, y, w, h, fill, bg) {
   const { s, brand } = L;
-  const dark = o.data.sponsorPlate === 'dark';
-  ctx.fillStyle = dark ? '#151515' : brand.colors.secondary;
-  ctx.fillRect(x, y, w, h);
+  bg ||= o.data.sponsorPlate === 'dark' ? '#151515' : brand.colors.secondary;
+  const clear = bg === 'transparent';
+  if (!clear) {
+    ctx.fillStyle = bg;
+    ctx.fillRect(x, y, w, h);
+  }
+  // name-as-text fallback needs to contrast with whatever is behind it
+  const dark = isDark(clear ? brand.colors.background : bg);
   ctx.strokeStyle = brand.colors.accent;
   ctx.lineWidth = 3 * s;
   ctx.strokeRect(x - 7 * s, y - 7 * s, w + 14 * s, h + 14 * s);
@@ -579,10 +586,12 @@ function logoBox(ctx, L, o, x, y, w, h, fill) {
   const a = o.assets.sponsor;
   const pad = Math.min(w, h) * (1 - fill) / 2;
   if (a) {
-    const fit = fitBox(a, w - pad * 2, h - pad * 2);
+    // Square-ish logos are limited by the box height, so give them less padding top and bottom
+    const padY = a.w / a.h < 1.6 ? h * 0.07 : pad;
+    const fit = fitBox(a, w - pad * 2, h - padY * 2);
     ctx.drawImage(a.img, x + (w - fit.w) / 2, y + (h - fit.h) / 2, fit.w, fit.h);
   } else {
-    ctx.fillStyle = dark ? '#fff' : '#141414';
+    ctx.fillStyle = dark ? brand.colors.text : '#141414';
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.font = font(L, 'body', 600, fitSize(ctx, L, o.data.sponsorName, 'body', 600, h * 0.4, w - pad * 2));
     ctx.fillText(o.data.sponsorName, x + w / 2, y + h / 2);
@@ -733,6 +742,11 @@ function wrapLines(ctx, text, maxW, sp) {
     if (line) lines.push(line);
   }
   return lines.slice(0, 5);
+}
+
+function isDark(hex) {
+  const v = parseInt(hex.replace('#', ''), 16);
+  return 0.299 * ((v >> 16) & 255) + 0.587 * ((v >> 8) & 255) + 0.114 * (v & 255) < 140;
 }
 
 function rgba(hex, a) {

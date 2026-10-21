@@ -190,6 +190,9 @@ th { position: sticky; top: 0; background: #fff; }
 .check.whole { margin-top: 10px; display: flex; width: fit-content; margin-inline: auto; }
 .people { display: grid; gap: 8px; }
 .stream { display: grid; gap: 8px; }
+.logo-bg { display: flex; align-items: end; gap: 8px; }
+.logo-bg label { flex: 1; }
+.logo-bg input[type=color] { width: 52px; height: 44px; padding: 2px; border: 1px solid #D1D5DB; border-radius: 10px; background: #fff; }
 .tier-row input { text-align: left; font-size: 16px; font-weight: 400; }
 .stream .check { width: fit-content; }
 .people p { margin: 0; }

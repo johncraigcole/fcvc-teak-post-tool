@@ -12,7 +12,7 @@ const JPG_QUALITY = 0.92;
 
 const FIELD_IDS = ['date', 'time', 'opponent', 'venue', 'ourScore', 'theirScore', 'headline', 'subtext', 'placing', 'record',
   'p1Role', 'p1Name', 'p2Role', 'p2Name', 'p3Role', 'p3Name', 'collageCount', 'stream', 'streamText', 'context',
-  'eyebrow', 'tySupport', 'tyTier', 'tyWord', 'tyMessage', 'season'];
+  'eyebrow', 'tySupport', 'tyTier', 'tyWord', 'tyMessage', 'season', 'logoBg', 'logoBgCustom'];
 
 let config, sponsors = [];
 const assets = { club: null, sponsors: new Map(), overlays: {} };
@@ -31,6 +31,7 @@ const state = {
 };
 state.fields.date = todayISO();
 state.fields.collageCount = '4';
+state.fields.logoBgCustom = '#ffffff';
 
 const tpl = () => TEMPLATES[state.template];
 
@@ -276,7 +277,24 @@ function buildSponsorSelect() {
   };
 }
 
+// Logo box background choices for the Sponsor Thank-You post (colours from config.json).
+function buildLogoBgOptions() {
+  const c = config.colors;
+  const opts = [['', 'Sponsor default'], ['transparent', 'Transparent'], ['#FFFFFF', 'White'], ['#0A0A0A', 'Black'],
+    [c.primary, 'Club green'], [c.accent, 'Club gold'], ['custom', 'Custom colour…']];
+  $('#f-logoBg').innerHTML = opts.map(([v, label]) => `<option value="${esc(v)}">${esc(label)}</option>`).join('');
+  $('#f-logoBg').addEventListener('change', (e) => { $('#f-logoBgCustom').hidden = e.target.value !== 'custom'; });
+}
+
+// A sponsor's usual logo box colour: "background" in sponsors.json, else from "plate", else none.
+function sponsorBackground(sp) {
+  if (!sp) return 'transparent';
+  if (sp.background) return sp.background;
+  return sp.plate === 'light' ? '#FFFFFF' : sp.plate === 'dark' ? '#151515' : 'transparent';
+}
+
 function bindFields() {
+  buildLogoBgOptions();
   $('#f-streamText').placeholder = `Wording (default: ${config.labels?.livestream || 'WATCH THE STREAM'})`;
   // Sponsor Thank-You text boxes show the default wording they'll use if left blank
   const lb = config.labels || {};
@@ -340,6 +358,7 @@ function postData() {
     sponsorWord: f.tyWord || config.labels?.sponsorWord || 'SPONSOR',
     message: f.tyMessage || config.labels?.thankYouMessage || '',
     sponsorPlate: sp?.plate,
+    logoBg: f.logoBg === 'custom' ? (f.logoBgCustom || '#ffffff') : f.logoBg || sponsorBackground(sp),
   };
 }
 

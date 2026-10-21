@@ -1,5 +1,5 @@
 [
-  { "name": "Acme Hardware", "logo": "logos/acme-hardware.png", "tier": "Gold", "active": true },
-  { "name": "Smith Dental", "logo": "logos/smith-dental.png", "tier": "Silver", "active": true },
-  { "name": "Riverbend Bakery", "logo": "logos/riverbend-bakery.png", "tier": "Bronze", "active": false }
+  { "name": "Spark Power", "logo": "logos/spark-power.png", "tier": "Silver", "active": true, "background": "#FFFFFF" },
+  { "name": "Riverside Concrete Forming", "logo": "logos/riverside-concrete-forming.png", "tier": "Silver", "active": true, "background": "transparent", "plate": "dark" },
+  { "name": "Dental Arts Centre", "logo": "logos/dental-arts-centre.png", "tier": "Bronze", "active": true, "background": "#FFFFFF" }
 ]
