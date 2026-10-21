@@ -1,0 +1,15 @@
+# Never commit photos: this repository is public and photos may include minors.
+*.jpg
+*.jpeg
+*.JPG
+*.JPEG
+*.heic
+*.HEIC
+*.heif
+*.mov
+*.MOV
+*.mp4
+*.zip
+
+.DS_Store
+.claude/

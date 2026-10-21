@@ -1,0 +1,44 @@
+{
+  "clubName": "Club Name",
+  "clubShortName": "CLUB",
+  "clubLogo": "logos/club-logo.png",
+  "sport": "Soccer",
+  "hashtags": ["#ClubName", "#GameDay"],
+
+  "colors": {
+    "primary": "#12284C",
+    "secondary": "#FFFFFF",
+    "accent": "#F5B700",
+    "text": "#FFFFFF",
+    "dark": "#0A1628"
+  },
+
+  "fonts": {
+    "display": "Anton",
+    "body": "Inter",
+    "googleFontsUrl": "https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;600;800&display=swap"
+  },
+
+  "labels": {
+    "result": "FULL TIME",
+    "presentedBy": "PRESENTED BY",
+    "thankYou": "THANKS TO OUR SPONSOR",
+    "highlight": "HIGHLIGHT"
+  },
+
+  "captions": {
+    "game-day": [
+      "Great effort today vs [Opponent]! Final: [Score]. Thanks to [Sponsor] for supporting our club. [Hashtags] #[Sport]",
+      "Full time: [Club] [Score] [Opponent]. Proud of the whole team! Presented by [Sponsor]. [Hashtags]",
+      "Game day vs [Opponent] ([Date]). Final score [Score]. Huge thanks to [Sponsor]! [Hashtags] #[Sport]"
+    ],
+    "highlight": [
+      "[Headline] What a moment vs [Opponent]! Thanks to [Sponsor] for backing our club. [Hashtags] #[Sport]",
+      "[Headline] [Hashtags] Proudly supported by [Sponsor]."
+    ],
+    "thank-you": [
+      "A huge thank you to [Sponsor] for supporting [Club] this season! [Hashtags] #[Sport]",
+      "We couldn't do it without our sponsors. Thank you, [Sponsor]! [Hashtags]"
+    ]
+  }
+}

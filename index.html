@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Club Post Maker</title>
+  <meta name="description" content="Turn game photos into branded Instagram and Facebook posts. Photos never leave your device.">
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="logos/club-logo.png">
+  <link rel="apple-touch-icon" href="logos/club-logo.png">
+  <link rel="stylesheet" href="css/app.css">
+  <script type="module" src="js/app.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <img id="clubLogoImg" class="topbar-logo" alt="" src="logos/club-logo.png">
+    <div>
+      <h1 id="appTitle">Club Post Maker</h1>
+      <p class="topbar-sub">🔒 Photos stay on this device. Nothing is uploaded.</p>
+    </div>
+  </header>
+
+  <div id="fatal" class="fatal" hidden></div>
+
+  <main class="layout">
+    <!-- Preview -->
+    <section class="preview-col" aria-label="Preview">
+      <div class="tabs" id="formatTabs" role="tablist"></div>
+      <div class="stage" id="stage">
+        <canvas id="preview" width="1080" height="1350" aria-label="Post preview"></canvas>
+      </div>
+      <div class="crop-row" id="cropRow">
+        <span class="crop-label">Zoom</span>
+        <input type="range" id="zoom" min="1" max="5" step="0.01" value="1" aria-label="Zoom">
+        <button type="button" class="btn small ghost" id="resetCrop">Reset</button>
+      </div>
+      <p class="hint" id="cropHint">Drag the photo to reposition. Pinch, scroll or use the slider to zoom. Each size has its own crop.</p>
+      <div class="thumbs" id="thumbs" aria-label="Photos"></div>
+    </section>
+
+    <!-- Controls -->
+    <section class="controls-col">
+      <div class="card">
+        <h2><span class="step">1</span> Photos</h2>
+        <label class="btn primary block file-btn">
+          <input type="file" id="fileInput" accept="image/*" multiple>
+          <span id="addLabel">Add photos</span>
+        </label>
+        <p class="muted small" id="photoCount">Pick one photo, or several from the same game for batch mode.</p>
+      </div>
+
+      <div class="card">
+        <h2><span class="step">2</span> Template</h2>
+        <div class="seg" id="templatePicker" role="radiogroup" aria-label="Template"></div>
+      </div>
+
+      <div class="card">
+        <h2><span class="step">3</span> Sponsor</h2>
+        <select id="sponsor" aria-label="Sponsor"></select>
+        <div id="logoWarnings" class="warn" hidden></div>
+      </div>
+
+      <div class="card">
+        <h2><span class="step">4</span> Details</h2>
+        <div class="fields">
+          <label data-field="date">Game date
+            <input type="date" id="f-date">
+          </label>
+          <label data-field="opponent">Opponent <span class="opt" data-opt-for="highlight">(optional)</span>
+            <input type="text" id="f-opponent" placeholder="e.g. Riverside" autocomplete="off" maxlength="40">
+          </label>
+          <div data-field="score" class="score-row">
+            <label>Our score <input type="text" id="f-ourScore" inputmode="numeric" maxlength="3" placeholder="3"></label>
+            <span class="dash">–</span>
+            <label>Their score <input type="text" id="f-theirScore" inputmode="numeric" maxlength="3" placeholder="1"></label>
+          </div>
+          <label data-field="headline">Headline
+            <input type="text" id="f-headline" placeholder="e.g. Big save!" autocomplete="off" maxlength="40">
+          </label>
+          <label data-field="subtext">Small line <span class="opt">(optional)</span>
+            <input type="text" id="f-subtext" placeholder="Leave blank to show opponent and date" autocomplete="off" maxlength="60">
+          </label>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2><span class="step">5</span> Create images</h2>
+        <fieldset class="checks">
+          <legend class="muted small">Sizes</legend>
+          <div id="formatChecks"></div>
+        </fieldset>
+        <label class="inline">File type
+          <select id="fileType">
+            <option value="jpg">JPG (best for posting)</option>
+            <option value="png">PNG (larger files)</option>
+          </select>
+        </label>
+        <div class="btn-row">
+          <button type="button" class="btn primary" id="createOne">Create images</button>
+          <button type="button" class="btn" id="createAll" hidden>Create for all photos</button>
+        </div>
+        <p class="muted small" id="progress" aria-live="polite"></p>
+
+        <div id="results" class="results" hidden>
+          <div class="result-grid" id="resultGrid"></div>
+          <div class="btn-row">
+            <button type="button" class="btn primary" id="shareBtn" hidden>Save to Photos / Share</button>
+            <button type="button" class="btn" id="downloadAll">Download</button>
+            <button type="button" class="btn" id="downloadZip" hidden>Download ZIP</button>
+          </div>
+          <p class="muted small" id="saveTip"></p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Caption</h2>
+        <select id="captionPick" aria-label="Caption style"></select>
+        <textarea id="caption" rows="4" aria-label="Caption"></textarea>
+        <div class="btn-row">
+          <button type="button" class="btn" id="copyCaption">Copy caption</button>
+        </div>
+      </div>
+
+      <details class="card" id="logCard">
+        <summary><h2>Sponsor log</h2><span class="muted small" id="logCount"></span></summary>
+        <p class="muted small">Records which sponsor was used on which post. It's stored on this device only, so each volunteer's log is separate.</p>
+        <div id="logTotals" class="chips"></div>
+        <div class="table-wrap"><table id="logTable"></table></div>
+        <div class="btn-row">
+          <button type="button" class="btn" id="exportLog">Export CSV</button>
+          <button type="button" class="btn ghost danger" id="clearLog">Clear log</button>
+        </div>
+      </details>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" role="status" hidden></div>
+</body>
+</html>
