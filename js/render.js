@@ -9,7 +9,6 @@
 export const FORMATS = {
   feed:   { id: 'feed',   label: 'Feed',   ratio: '4:5',  w: 1080, h: 1350, safeTop: 0,   safeBottom: 0,   s: 1 },
   story:  { id: 'story',  label: 'Story',  ratio: '9:16', w: 1080, h: 1920, safeTop: 250, safeBottom: 250, s: 1 },
-  square: { id: 'square', label: 'Square', ratio: '1:1',  w: 1080, h: 1080, safeTop: 0,   safeBottom: 0,   s: 0.8 },
 };
 
 export const MAX_ZOOM = 5;

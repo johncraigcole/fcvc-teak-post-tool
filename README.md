@@ -27,7 +27,7 @@ Turns game photos into consistently branded Instagram and Facebook images, with 
 
 3. **Add photos.** Pick one, or several from the same game (batch mode).
 4. **Pick the sponsor, or "No sponsor"** (always allowed, on every template), and fill in the details. With no sponsor the "Presented by" row is left out, the photo gets the extra room, captions drop their sponsor sentence, and nothing goes in the sponsor log. Headlines are optional; each template has a default (e.g. "Meet the coaches"). Long headlines split over two lines automatically. To choose where it splits, type a `|`, e.g. `Meet the|Team`.
-5. **Adjust the crop** in the preview: drag to move, pinch (or use the slider) to zoom. Switch between **Feed / Story / Square** at the top; each size has its own crop. In Story, the pink bands show where Instagram puts its own buttons. They aren't in the final image.
+5. **Adjust the crop** in the preview: drag to move, pinch (or use the slider) to zoom. Switch between **Feed / Story** at the top; each size has its own crop. In Story, the pink bands show where Instagram puts its own buttons. They aren't in the final image.
    - **Show whole photo (no cropping)** fits the entire photo in the window over a blurred copy of itself. It's useful for a landscape shot in a tall post.
 6. With several photos, tap a thumbnail to adjust each one's crop. In a collage, tap a photo in the preview to select it. Template, sponsor and details apply to all of them.
    - **Collages** use photos in order: with 4 photos per collage, 10 photos make collages of 4, 4 and 2.
@@ -40,8 +40,7 @@ Turns game photos into consistently branded Instagram and Facebook images, with 
 | Size | Pixels | Use |
 |---|---|---|
 | Feed | 1080 × 1350 (4:5) | Instagram and Facebook posts |
-| Story | 1080 × 1920 (9:16) | Instagram/Facebook Stories (keeps ~250px top and bottom clear) |
-| Square | 1080 × 1080 | Carousels, Facebook |
+| Story | 1080 × 1920 (9:16) | Instagram/Facebook Stories and Reel cover images (keeps ~250px top and bottom clear) |
 
 Files are named like `2026-10-18_vs-Riverside_feed_01.jpg`.
 
@@ -136,7 +135,7 @@ then set `"display": "Club Display"` and `"body": "Club Sans"`.
 }
 ```
 
-The PNG must be exactly the output size (1080×1350, 1080×1920 or 1080×1080). It's drawn on top of the finished post for that template and size, so leave it transparent wherever the photo, text and logos should show through.
+The PNG must be exactly the output size (1080×1350 or 1080×1920). It's drawn on top of the finished post for that template and size, so leave it transparent wherever the photo, text and logos should show through.
 
 ### Logo rules
 

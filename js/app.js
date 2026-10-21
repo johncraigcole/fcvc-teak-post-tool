@@ -22,7 +22,7 @@ const state = {
   template: 'game-day',
   sponsorName: '',
   fields: Object.fromEntries(FIELD_IDS.map((id) => [id, ''])),
-  out: { feed: true, story: true, square: false },
+  out: { feed: true, story: true },
   fileType: 'jpg',
   captionIdx: 0,
   outputs: [],         // { name, blob, url, format }
@@ -180,7 +180,9 @@ function loadPrefs() {
   const p = storageGet(PREFS_KEY) || {};
   if (TEMPLATES[p.template]) state.template = p.template;
   state.sponsorName = p.sponsorName === '' || sponsors.some((sp) => sp.name === p.sponsorName) ? p.sponsorName : sponsors[0]?.name || '';
-  if (p.out && Object.values(p.out).some(Boolean)) state.out = { ...state.out, ...p.out };
+  // Only sizes that still exist (Square was removed); keep the defaults if none are ticked.
+  const out = Object.fromEntries(Object.keys(FORMATS).map((f) => [f, !!p.out?.[f]]));
+  if (Object.values(out).some(Boolean)) state.out = out;
   if (p.fileType === 'png' || p.fileType === 'jpg') state.fileType = p.fileType;
   if (['2', '3', '4'].includes(p.collageCount)) state.fields.collageCount = p.collageCount;
 }
