@@ -74,11 +74,31 @@
           <label data-field="headline"><span id="headlineLabel">Headline</span> <span class="opt">(optional)</span>
             <input type="text" id="f-headline" autocomplete="off" maxlength="40">
           </label>
+          <label data-field="context">Game context <span class="opt">(optional)</span>
+            <input type="text" id="f-context" placeholder="e.g. Gold Medal Game, In Pool Play" autocomplete="off" maxlength="30">
+          </label>
           <label data-field="placing">Finish
             <input type="text" id="f-placing" placeholder="e.g. Gold medal, 2nd place" autocomplete="off" maxlength="24">
           </label>
           <label data-field="record">Record <span class="opt">(optional)</span>
             <input type="text" id="f-record" placeholder="e.g. 5–1" autocomplete="off" maxlength="12">
+          </label>
+          <label data-field="eyebrow">Top line <span class="opt">(optional)</span>
+            <input type="text" id="f-eyebrow" autocomplete="off" maxlength="40">
+          </label>
+          <label data-field="tySupport">Line above the ribbon <span class="opt">(optional)</span>
+            <input type="text" id="f-tySupport" autocomplete="off" maxlength="100">
+          </label>
+          <div data-field="tyTier" class="score-row tier-row">
+            <label>Ribbon <input type="text" id="f-tyTier" autocomplete="off" maxlength="16"></label>
+            <span></span>
+            <label>Under it <input type="text" id="f-tyWord" autocomplete="off" maxlength="16"></label>
+          </div>
+          <label data-field="tyMessage">Message <span class="opt">(optional · use | to start a new line)</span>
+            <textarea id="f-tyMessage" rows="3" maxlength="200"></textarea>
+          </label>
+          <label data-field="season">Bottom line <span class="opt">(optional)</span>
+            <input type="text" id="f-season" autocomplete="off" maxlength="30">
           </label>
           <label data-field="date">Date
             <input type="date" id="f-date">
@@ -92,6 +112,10 @@
           <label data-field="venue">Venue
             <input type="text" id="f-venue" placeholder="e.g. Western Rec Centre" autocomplete="off" maxlength="40">
           </label>
+          <div data-field="stream" class="stream">
+            <label class="check"><input type="checkbox" id="f-stream"> Streaming this game</label>
+            <input type="text" id="f-streamText" autocomplete="off" maxlength="40" aria-label="Stream wording" hidden>
+          </div>
           <div data-field="score" class="score-row">
             <label>Our score <input type="text" id="f-ourScore" inputmode="numeric" maxlength="3" placeholder="3"></label>
             <span class="dash">–</span>

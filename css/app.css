@@ -189,6 +189,9 @@ th { position: sticky; top: 0; background: #fff; }
 
 .check.whole { margin-top: 10px; display: flex; width: fit-content; margin-inline: auto; }
 .people { display: grid; gap: 8px; }
+.stream { display: grid; gap: 8px; }
+.tier-row input { text-align: left; font-size: 16px; font-weight: 400; }
+.stream .check { width: fit-content; }
 .people p { margin: 0; }
 .person { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .seg button[aria-checked="true"] { padding: 9px 11px; }

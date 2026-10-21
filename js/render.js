@@ -11,9 +11,12 @@ export const FORMATS = {
   story:  { id: 'story',  label: 'Story',  ratio: '9:16', w: 1080, h: 1920, safeTop: 250, safeBottom: 250, s: 1 },
 };
 
+import { drawHero } from './hero.js';
+
 export const MAX_ZOOM = 5;
 const SPONSOR_ROW = 100;   // height of the "PRESENTED BY [logo]" row
 const RIBBON = 150;        // height of name/score ribbons
+const STREAM_ROW = 104;    // height of the Next Game "LIVE" banner
 const LINE = 50;           // a single line of text in place of the sponsor row
 
 // ---------- Templates ----------
@@ -24,6 +27,7 @@ const LINE = 50;           // a single line of text in place of the sponsor row
 
 export const TEMPLATES = {
   'game-day': {
+    compact: true,
     name: 'Game Day Result',
     desc: 'Score ribbons, date and optional sponsor',
     photos: 'one',
@@ -39,6 +43,7 @@ export const TEMPLATES = {
   },
 
   'highlight': {
+    compact: true,
     name: 'Player / Moment Highlight',
     desc: 'Your headline (e.g. "Big save!") over a big photo',
     photos: 'one', headline: { label: 'Headline', placeholder: 'e.g. Big save!' },
@@ -50,6 +55,7 @@ export const TEMPLATES = {
   },
 
   'collage': {
+    compact: true,
     name: 'Photo Collage',
     desc: '2–4 photos in one post. Mixes portrait and landscape',
     photos: 'multi', headline: { label: 'Headline', placeholder: 'e.g. Game day' },
@@ -61,6 +67,7 @@ export const TEMPLATES = {
   },
 
   'meet-team': {
+    compact: true,
     name: 'Meet the Team / Coaches',
     desc: 'Photo with up to 3 name ribbons',
     photos: 'one', headline: { label: 'Headline', placeholder: 'e.g. Meet the coaches' },
@@ -78,9 +85,10 @@ export const TEMPLATES = {
   'next-game': {
     name: 'Next Game',
     desc: 'Upcoming match: opponent, date, time, venue',
-    photos: 'optional',
-    fields: ['opponent', 'date', 'time', 'venue'],
-    info: (d) => 90 + 20 + 110 + (d.hasSponsor ? 26 + SPONSOR_ROW : 0),
+    photos: 'optional', hero: true,   // ball-smashes-badge artwork when there's no photo
+    oneLine: true,                    // "NEXT GAME" on one line, with the context line under it
+    fields: ['context', 'opponent', 'date', 'time', 'venue', 'stream'],
+    info: (d) => 90 + 20 + 110 + (d.stream ? 26 + STREAM_ROW : 0) + (d.hasSponsor ? 26 + SPONSOR_ROW : 0),
     draw(ctx, L, o, box) {
       const { s } = L, d = o.data;
       const vs = `VS ${(d.opponent || 'OPPONENT').toUpperCase()}`;
@@ -93,11 +101,17 @@ export const TEMPLATES = {
         ['clock', 'TIME', d.timeLabel || 'TBC'],
         ['pin', 'VENUE', d.venue || 'TBC'],
       ]);
-      sponsorRow(ctx, L, o, box.y + (90 + 20 + 110 + 26) * s);
+      let y = box.y + (90 + 20 + 110) * s;
+      if (d.stream) {
+        streamRow(ctx, L, y + 26 * s, Math.min(box.w, 860 * s), d.stream, L.brand.labels.livestreamNote);
+        y += (26 + STREAM_ROW) * s;
+      }
+      sponsorRow(ctx, L, o, y + 26 * s);
     },
   },
 
   'tournament': {
+    compact: true,
     name: 'Tournament Result',
     desc: 'Event name, finish (medal colours) and record',
     photos: 'one', headline: { label: 'Event name', placeholder: 'e.g. Youth Nationals' },
@@ -115,45 +129,73 @@ export const TEMPLATES = {
     name: 'Sponsor Thank-You',
     desc: 'Tier ribbon and big sponsor logo, or a general thank-you. No photo needed',
     photos: 'none',
-    fields: ['date'],
+    headline: { label: 'Headline', placeholder: 'e.g. Thank you' },
+    // Every piece of text on this post can be changed per post; blank uses config.json.
+    fields: ['headline', 'eyebrow', 'tySupport', 'tyTier', 'tyWord', 'tyMessage', 'season', 'date'],
+    // Laid out like the club's sponsor post: support line, tier ribbon, logo box and
+    // message, spread evenly down the page.
     draw(ctx, L, o, box) {
       const { s, brand } = L, d = o.data;
-      if (!d.hasSponsor) return thanksPanel(ctx, L, box);
-      const msgSize = 29 * s, msgLine = 46 * s;
-      ctx.font = font(L, 'body', 500, msgSize);
-      const msg = wrapLines(ctx, (brand.labels.thankYouMessage || '').toUpperCase(), box.w - 80 * s, 2.5 * s);
-      const ribbonH = d.hasSponsor && d.sponsorTier ? 130 * s : 0;
-      const gap = 44 * s;
-      const fixed = 40 * s + gap + (ribbonH ? ribbonH + gap : 0) + (d.hasSponsor ? gap : 0) + msg.length * msgLine;
-      const logoH = d.hasSponsor ? Math.max(160 * s, Math.min(400 * s, box.h - fixed)) : 0;
-      let y = box.y + (box.h - fixed - logoH) / 2;
+      if (!d.hasSponsor) return thanksPanel(ctx, L, box, d);
+      let msgSize = 29 * s, msgSp = 3 * s;
+      const msg = fitLines(ctx, L, d.message.toUpperCase(), box.w - 60 * s, msgSize, msgSp);
+      msgSize = msg.size; msgSp = msg.sp;
+      const msgLine = msgSize * 1.6;
+      // Support line: one line, or two (wrapped, or split with |) when it's long
+      let supSize = 32 * s, supSp = 7 * s;
+      ctx.font = font(L, 'body', 500, supSize);
+      let sup = wrapLines(ctx, d.supportLine.toUpperCase(), box.w - 40 * s, supSp);
+      if (sup.length > 1) {
+        // Two lines at a slightly smaller size, shrinking further until everything fits in two
+        supSize = 28 * s; supSp = 4 * s;
+        for (;;) {
+          ctx.font = font(L, 'body', 500, supSize);
+          sup = wrapLines(ctx, d.supportLine.toUpperCase(), box.w - 40 * s, supSp);
+          if (sup.length <= 2 || supSize <= 16 * s) break;
+          supSize *= 0.94; supSp *= 0.94;
+        }
+        // Balance the two lines so neither is left with a single stray word
+        if (sup.length === 2 && !d.supportLine.includes('|')) {
+          const words = sup.join(' ').split(' ');
+          let best = sup;
+          for (let i = 1; i < words.length; i++) {
+            const pair = [words.slice(0, i).join(' '), words.slice(i).join(' ')];
+            const wid = Math.max(...pair.map((t) => spacedWidth(ctx, t, supSp)));
+            if (wid <= box.w - 40 * s && wid < Math.max(...best.map((t) => spacedWidth(ctx, t, supSp)))) best = pair;
+          }
+          sup = best;
+        }
+      }
+      const supLine = supSize * 1.5;
+      const supportH = supSize * 0.8 + (sup.length - 1) * supLine, ribbonH = d.sponsorTier ? 140 * s : 0;
+      const msgH = msg.lines.length ? msgSize * 0.75 + (msg.lines.length - 1) * msgLine : 0;
+      const logoH = Math.min(300 * s, box.h * 0.36);
+      const blocks = [supportH, ribbonH, logoH, msgH].filter(Boolean);
+      const gap = Math.max(36 * s, (box.h - blocks.reduce((a, b) => a + b, 0)) / (blocks.length + 1));
+      let y = box.y + gap;
 
       ctx.fillStyle = brand.colors.text;
-      spaced(ctx, L, brand.labels.supportLine || '', L.W / 2, y + 30 * s, 'body', 500, 30 * s, 6 * s, 'center', box.w);
-      y += 40 * s + gap;
+      sup.forEach((line, i) => spaced(ctx, L, line, L.W / 2, y + supSize * 0.8 + i * supLine, 'body', 500, supSize, supSp, 'center', box.w - 40 * s));
+      y += supportH + gap;
+      const w = Math.min(box.w - 80 * s, 920 * s);
       if (ribbonH) {
-        const w = Math.min(box.w, 900 * s);
-        ribbon(ctx, L, L.W / 2 - w / 2, y, w, ribbonH, medalStyle(d.sponsorTier), null, d.sponsorTier.toUpperCase(), 64, brand.labels.sponsorWord || 'SPONSOR');
+        ribbon(ctx, L, L.W / 2 - w / 2, y, w, ribbonH, medalStyle(d.sponsorTier), null, d.sponsorTier.toUpperCase(), 68, d.sponsorWord.toUpperCase());
         y += ribbonH + gap;
       }
-      if (d.hasSponsor) {
-        const bw = Math.min(box.w, 900 * s);
-        logoBox(ctx, L, o, L.W / 2 - bw / 2, y, bw, logoH, 0.62);
-        y += logoH + gap;
-      }
-      ctx.font = font(L, 'body', 500, msgSize);
+      logoBox(ctx, L, o, L.W / 2 - w / 2 + 10 * s, y, w - 20 * s, logoH, 0.66);
+      y += logoH + gap;
       ctx.fillStyle = brand.colors.text;
-      msg.forEach((line, i) => spaced(ctx, L, line, L.W / 2, y + msgSize + i * msgLine, 'body', 500, msgSize, 2.5 * s, 'center'));
+      msg.lines.forEach((line, i) => spaced(ctx, L, line, L.W / 2, y + msgSize * 0.75 + i * msgLine, 'body', 500, msgSize, msgSp, 'center'));
     },
   },
 };
 
 // General thank-you (no sponsor): support line and message, larger, in a gold double frame.
-function thanksPanel(ctx, L, box) {
+function thanksPanel(ctx, L, box, d) {
   const { s, brand } = L;
   const size = 38 * s, line = 62 * s, sp = 3 * s, pad = 60 * s;
   ctx.font = font(L, 'body', 500, size);
-  const msg = wrapLines(ctx, (brand.labels.thankYouMessage || '').toUpperCase(), box.w - pad * 2, sp);
+  const msg = wrapLines(ctx, d.message.toUpperCase(), box.w - pad * 2, sp);
   const ph = Math.min(box.h - 30 * s, Math.max(420 * s, pad * 2 + 70 * s + msg.length * line));
   const py = box.y + (box.h - ph) / 2, px = box.x + 15 * s, pw = box.w - 30 * s;
   ctx.strokeStyle = brand.colors.accent;
@@ -163,7 +205,7 @@ function thanksPanel(ctx, L, box) {
   ctx.strokeRect(px + 9 * s, py + 9 * s, pw - 18 * s, ph - 18 * s);
   let y = py + (ph - (70 * s + msg.length * line)) / 2 + 30 * s;
   ctx.fillStyle = brand.colors.accent;
-  spaced(ctx, L, brand.labels.supportLine || '', L.W / 2, y, 'body', 600, 30 * s, 6 * s, 'center', pw - pad * 2);
+  spaced(ctx, L, d.supportLine.toUpperCase(), L.W / 2, y, 'body', 600, 30 * s, 6 * s, 'center', pw - pad * 2);
   ctx.fillStyle = brand.colors.text;
   y += 40 * s + size;
   msg.forEach((m, i) => spaced(ctx, L, m, L.W / 2, y + i * line, 'body', 500, size, sp, 'center'));
@@ -185,6 +227,9 @@ export function drawPost(ctx, fmt, o) {
   const B = H - Math.max(36 * s, fmt.safeBottom + 10);
   const L = { W, H, s, brand: o.brand, M: 50, T, B };
   const t = TEMPLATES[o.template];
+  // Photo-led templates use a smaller header, info area and footer so the photo stands out.
+  const Lh = t.compact ? { ...L, s: s * 0.72 } : L;   // header
+  const Li = t.compact ? { ...L, s: s * 0.8 } : L;    // info area and footer
 
   ctx.save();
   ctx.imageSmoothingEnabled = true;
@@ -192,19 +237,19 @@ export function drawPost(ctx, fmt, o) {
   ctx.fillStyle = o.brand.colors.background;
   ctx.fillRect(0, 0, W, H);
 
-  const headBottom = header(ctx, L, o, headlineText(o));
-  const footTop = footer(ctx, L);
-  const top = headBottom + 34 * s, bottom = footTop - 30 * s;
+  const headBottom = header(ctx, Lh, o, headlineText(o));
+  const footTop = footer(ctx, Li, o);
+  const top = headBottom + 34 * Li.s, bottom = footTop - 30 * Li.s;
   const contentW = W - 2 * L.M;
   let regions = [];
 
   if (t.photos === 'none') {
     t.draw(ctx, L, o, { x: L.M, y: top, w: contentW, h: bottom - top });
   } else {
-    const infoH = t.info(o.data) * s;
-    const win = { x: L.M + 14 * s, y: top + 14 * s, w: contentW - 28 * s, h: bottom - top - infoH - (infoH ? 34 * s : 0) - 28 * s };
+    const infoH = t.info(o.data) * Li.s;
+    const win = { x: L.M + 14 * s, y: top + 14 * s, w: contentW - 28 * s, h: bottom - top - infoH - (infoH ? 34 * Li.s : 0) - 28 * s };
     regions = photoWindow(ctx, L, o, win, fmt.id);
-    t.draw(ctx, L, o, { x: L.M, y: bottom - infoH, w: contentW, h: infoH });
+    t.draw(ctx, Li, o, { x: L.M, y: bottom - infoH, w: contentW, h: infoH });
   }
 
   const overlay = o.assets.overlays?.[o.template]?.[fmt.id];
@@ -251,19 +296,37 @@ function header(ctx, L, o, text) {
     ctx.drawImage(o.assets.club.img, L.M + (size - fit.w) / 2, L.T + (size - fit.h) / 2, fit.w, fit.h);
   }
   const x0 = L.M + size + 44 * s, x1 = L.W - L.M, colW = x1 - x0;
+  const t = TEMPLATES[o.template];
+  const eyebrow = (t.fields.includes('eyebrow') && o.data.eyebrow) || brand.labels.eyebrow || '';
   ctx.fillStyle = brand.colors.accent;
-  spaced(ctx, L, brand.labels.eyebrow || '', x0, L.T + 46 * s, 'body', 600, 28 * s, 6 * s, 'left', colW);
-  ctx.fillRect(x0, L.T + 76 * s, colW, 2 * s);
+  spaced(ctx, L, eyebrow.toUpperCase(), x0, L.T + 30 * s, 'body', 600, 28 * s, 6 * s, 'left', colW);
+  ctx.fillRect(x0, L.T + 58 * s, colW, 2 * s);
 
   // The headline always starts the same distance below the gold rule, and is sized so
-  // its lines fit between there and the bottom of the badge.
-  const lines = splitHeadline(ctx, L, text);
-  const CAP = 0.72, LH = 1.02;                       // Domine cap height and line height, in em
-  const top = L.T + 78 * s + 42 * s, room = L.T + size - top;
-  let fsize = Math.min(124 * s, room / (CAP + LH * (lines.length - 1)));
+  // its lines fit between there and the bottom of the badge (proportions from the club's posts).
+  const CAP = 0.72, LH = 0.98;                       // Domine cap height and line height, in em
+  const top = L.T + 60 * s + 42 * s, room = L.T + size - top;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  const sub = t.fields.includes('context') ? (o.data.context || '').toUpperCase() : '';
+  if (sub) {
+    // One-line headline in cream with a smaller gold context line under it (e.g. GOLD MEDAL GAME)
+    const GAP = 0.34, SUB = 0.6;
+    let fsize = Math.min(124 * s, room / (CAP + GAP + SUB * CAP));
+    fsize = fitSize(ctx, L, text, 'display', 700, fsize, colW);
+    const ssize = fitSize(ctx, L, sub, 'display', 700, fsize * SUB, colW);
+    const y = top + fsize * CAP;
+    ctx.font = font(L, 'display', 700, fsize);
+    ctx.fillStyle = brand.colors.text;
+    ctx.fillText(text, x0, y);
+    ctx.font = font(L, 'display', 700, ssize);
+    ctx.fillStyle = brand.colors.accent;
+    ctx.fillText(sub, x0, y + fsize * GAP + ssize * CAP);
+    return L.T + size;
+  }
+  const lines = t.oneLine ? [text] : splitHeadline(ctx, L, text);
+  let fsize = Math.min(132 * s, room / (CAP + LH * (lines.length - 1)));
   for (const line of lines) fsize = Math.min(fsize, fitSize(ctx, L, line, 'display', 700, fsize, colW));
   ctx.font = font(L, 'display', 700, fsize);
-  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
   const lh = fsize * LH;
   let y = top + fsize * CAP;
   lines.forEach((line, i) => {
@@ -290,10 +353,11 @@ function splitHeadline(ctx, L, text) {
 }
 
 // Gold season line with rules either side. Returns the footer's top edge.
-function footer(ctx, L) {
+function footer(ctx, L, o) {
   const { s, brand } = L;
   const y = L.B - 8 * s, size = 30 * s;
-  const text = brand.labels.season || '';
+  const t = TEMPLATES[o.template];
+  const text = ((t.fields.includes('season') && o.data.season) || brand.labels.season || '').toUpperCase();
   ctx.font = font(L, 'body', 600, size);
   const tw = spacedWidth(ctx, text, 8 * s);
   ctx.fillStyle = brand.colors.accent;
@@ -355,7 +419,8 @@ function drawPhotoIn(ctx, L, o, ph, r, key) {
   ctx.rect(r.x, r.y, r.w, r.h);
   ctx.clip();
   if (!ph) {
-    placeholderPanel(ctx, L, o, r);
+    if (TEMPLATES[o.template].hero) drawHero(ctx, r, L.s, L.brand.colors, o.assets.club);
+    else placeholderPanel(ctx, L, o, r);
   } else {
     const img = ph.img, iw = img.naturalWidth || img.width, ih = img.naturalHeight || img.height;
     if (ph.fit) {
@@ -524,6 +589,38 @@ function logoBox(ctx, L, o, x, y, w, h, fill) {
   }
 }
 
+// Livestream banner: a gold "● LIVE" tag and the wording, in a gold-edged green bar, with an
+// optional small note centred underneath, e.g. "(cellular network permitting)".
+function streamRow(ctx, L, y, w, text, note) {
+  const { s, brand } = L, h = STREAM_ROW * s, x = L.W / 2 - w / 2;
+  ctx.save();
+  roundRect(ctx, x, y, w, h, h / 2);
+  ctx.fillStyle = rgba(brand.colors.primary, 0.85);
+  ctx.fill();
+  ctx.strokeStyle = brand.colors.accent;
+  ctx.lineWidth = 2.5 * s;
+  ctx.stroke();
+  // LIVE tag
+  const tw = 128 * s, th = 50 * s, tx = x + 16 * s, ty = y + (h - th) / 2;
+  roundRect(ctx, tx, ty, tw, th, th / 2);
+  ctx.fillStyle = brand.colors.accent;
+  ctx.fill();
+  ctx.fillStyle = '#141414';
+  ctx.beginPath();
+  ctx.arc(tx + 26 * s, ty + th / 2, 7 * s, 0, Math.PI * 2);
+  ctx.fill();
+  spaced(ctx, L, 'LIVE', tx + 42 * s, ty + th / 2 + 9 * s, 'body', 600, 26 * s, 4 * s, 'left');
+  // Wording
+  ctx.fillStyle = brand.colors.text;
+  const left = tx + tw + 20 * s, room = x + w - 24 * s - left, mid = left + room / 2;
+  spaced(ctx, L, text.toUpperCase(), mid, y + (note ? h * 0.44 : h * 0.5 + 9 * s), 'body', 600, 26 * s, 3.5 * s, 'center', room);
+  if (note) {
+    ctx.fillStyle = rgba(brand.colors.text, 0.75);
+    spaced(ctx, L, note, mid, y + h * 0.44 + 34 * s, 'body', 500, 19 * s, 1 * s, 'center', room);
+  }
+  ctx.restore();
+}
+
 // Three columns of [icon] LABEL / value, separated by thin gold rules.
 function iconRow(ctx, L, x, y, w, h, items) {
   const { s, brand } = L, colW = w / items.length, r = 34 * s;
@@ -609,16 +706,48 @@ function spaced(ctx, L, text, x, y, role, weight, size, sp, align, maxW) {
 }
 
 // Greedy word wrap using the current font, accounting for letter spacing.
+// Text with "|" breaks keeps exactly those lines, shrinking the size until the longest fits;
+// text without them is word-wrapped at the given size.
+function fitLines(ctx, L, text, maxW, size, sp) {
+  if (!text.includes('|')) {
+    ctx.font = font(L, 'body', 500, size);
+    return { lines: wrapLines(ctx, text, maxW, sp), size, sp };
+  }
+  const lines = text.split('|').map((t) => t.trim()).filter(Boolean);
+  ctx.font = font(L, 'body', 500, size);
+  const widest = Math.max(...lines.map((t) => spacedWidth(ctx, t, sp)));
+  const k = Math.min(1, maxW / widest);
+  return { lines, size: size * k, sp: sp * k };
+}
+
+// A "|" forces a line break, so wording can be broken exactly where wanted.
 function wrapLines(ctx, text, maxW, sp) {
   const lines = [];
-  let line = '';
-  for (const word of text.split(/\s+/).filter(Boolean)) {
-    const test = line ? `${line} ${word}` : word;
-    if (line && spacedWidth(ctx, test, sp) > maxW) { lines.push(line); line = word; }
-    else line = test;
+  for (const part of text.split('|')) {
+    let line = '';
+    for (const word of part.split(/\s+/).filter(Boolean)) {
+      const test = line ? `${line} ${word}` : word;
+      if (line && spacedWidth(ctx, test, sp) > maxW) { lines.push(line); line = word; }
+      else line = test;
+    }
+    if (line) lines.push(line);
   }
-  if (line) lines.push(line);
-  return lines.slice(0, 4);
+  return lines.slice(0, 5);
+}
+
+function rgba(hex, a) {
+  const v = parseInt(hex.replace('#', ''), 16);
+  return `rgba(${(v >> 16) & 255},${(v >> 8) & 255},${v & 255},${a})`;
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
 }
 
 // Size a logo to fit a box without stretching.

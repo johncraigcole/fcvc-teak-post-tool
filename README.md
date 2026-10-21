@@ -21,9 +21,9 @@ Turns game photos into consistently branded Instagram and Facebook images, with 
    | **Player / Moment Highlight** | Your headline (e.g. "Big save!") over a big photo | 1 per post |
    | **Photo Collage** | 2–4 photos in one post. Portrait and landscape can mix | 2–4 per post |
    | **Meet the Team / Coaches** | Photo with up to 3 name ribbons (role + name) | 1 per post |
-   | **Next Game** | "VS opponent", date, time and venue | optional |
+   | **Next Game** | "NEXT GAME" with an optional context line under it (e.g. "Gold Medal Game", "In Pool Play"), "VS opponent", date, time and venue, plus an optional "LIVE — watch the stream" banner for streamed games. Without a photo it shows poster-style artwork of a volleyball flying over the net and smashing through the club badge | optional |
    | **Tournament Result** | Event name, finish ribbon (gold/silver/bronze colours) and record | 1 per post |
-   | **Sponsor Thank-You** | Sponsor tier ribbon (e.g. "SILVER SPONSOR"), big logo, thank-you message. With no sponsor, a general thank-you | none |
+   | **Sponsor Thank-You** | Laid out like the club's sponsor post: "THANK YOU", "For supporting our TEAK 16U team", tier ribbon (e.g. "SILVER SPONSOR"), big logo box and thank-you message. Every line can be reworded per post; blank boxes use the defaults from `config.json`. With no sponsor, a general thank-you | none |
 
 3. **Add photos.** Pick one, or several from the same game (batch mode).
 4. **Pick the sponsor, or "No sponsor"** (always allowed, on every template), and fill in the details. With no sponsor the "Presented by" row is left out, the photo gets the extra room, captions drop their sponsor sentence, and nothing goes in the sponsor log. Headlines are optional; each template has a default (e.g. "Meet the coaches"). Long headlines split over two lines automatically. To choose where it splits, type a `|`, e.g. `Meet the|Team`.
@@ -98,8 +98,10 @@ Everything is changed through the GitHub website. Changes are live a minute or t
     "presentedBy": "PRESENTED BY",
     "supportLine": "FOR SUPPORTING OUR TEAK 16U TEAM",
     "sponsorWord": "SPONSOR",       // under the tier on the thank-you ribbon
-    "thankYouMessage": "Your support helps get our team on the road…",
-    "tournamentRibbon": "FINAL STANDING"  // used when no dates & location are entered
+    "thankYouMessage": "Your support helps get our team on the road | to new opportunities, growth | and amazing experiences.",  // | = line break
+    "tournamentRibbon": "FINAL STANDING",  // used when no dates & location are entered
+    "livestream": "WATCH THE STREAM",  // Next Game streaming banner (volunteers can reword per post, e.g. to name the platform)
+    "livestreamNote": "(venue signal strength permitting)"  // small line always shown under it (remove to hide)
   },
 
   "headlines": { "game-day": "FINAL SCORE", "meet-team": "MEET THE COACHES", "…": "…" },
@@ -113,7 +115,7 @@ Everything is changed through the GitHub website. Changes are live a minute or t
 
 Template keys: `game-day`, `highlight`, `collage`, `meet-team`, `next-game`, `tournament`, `thank-you`.
 
-**Caption placeholders:** `[Opponent]` `[Score]` `[Sponsor]` `[Tier]` `[Date]` `[Time]` `[Venue]` `[Headline]` `[Placing]` `[Record]` `[Club]` `[Hashtags]` `[ClubHashtag]` `[Sport]`. Add as many caption options per template as you like. Volunteers choose from a dropdown. A placeholder whose detail is blank stays visible as e.g. `[Opponent]`, so volunteers can see what's missing.
+**Caption placeholders:** `[Stream]` (Next Game: "Can't make it? Watch the stream (venue signal strength permitting)!" when streaming is ticked, otherwise nothing) `[Opponent]` `[Score]` `[Sponsor]` `[Tier]` `[Date]` `[Time]` `[Venue]` `[Headline]` `[Placing]` `[Record]` `[Club]` `[Hashtags]` `[ClubHashtag]` `[Sport]`. Add as many caption options per template as you like. Volunteers choose from a dropdown. A placeholder whose detail is blank stays visible as e.g. `[Opponent]`, so volunteers can see what's missing.
 
 **Using the club's own font files** instead of Google Fonts: upload them to `fonts/`, remove `googleFontsUrl`, and add:
 
@@ -175,6 +177,7 @@ index.html            page layout
 css/app.css           styles
 js/app.js             UI, photos, crops, saving, captions, sponsor log
 js/render.js          output sizes, templates and all drawing (positions live here)
+js/hero.js            the Next Game artwork (drawn in code, no images needed)
 js/zip.js             tiny ZIP writer for "Download ZIP"
 config.json           branding, captions, labels
 sponsors.json         sponsor list

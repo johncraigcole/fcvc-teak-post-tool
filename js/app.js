@@ -11,7 +11,8 @@ const MAX_PHOTO_SIDE = 2560;   // photos are downscaled to this on load to keep 
 const JPG_QUALITY = 0.92;
 
 const FIELD_IDS = ['date', 'time', 'opponent', 'venue', 'ourScore', 'theirScore', 'headline', 'subtext', 'placing', 'record',
-  'p1Role', 'p1Name', 'p2Role', 'p2Name', 'p3Role', 'p3Name', 'collageCount'];
+  'p1Role', 'p1Name', 'p2Role', 'p2Name', 'p3Role', 'p3Name', 'collageCount', 'stream', 'streamText', 'context',
+  'eyebrow', 'tySupport', 'tyTier', 'tyWord', 'tyMessage', 'season'];
 
 let config, sponsors = [];
 const assets = { club: null, sponsors: new Map(), overlays: {} };
@@ -276,8 +277,27 @@ function buildSponsorSelect() {
 }
 
 function bindFields() {
+  $('#f-streamText').placeholder = `Wording (default: ${config.labels?.livestream || 'WATCH THE STREAM'})`;
+  // Sponsor Thank-You text boxes show the default wording they'll use if left blank
+  const lb = config.labels || {};
+  $('#f-eyebrow').placeholder = lb.eyebrow || '';
+  $('#f-tySupport').placeholder = lb.supportLine || '';
+  $('#f-tyTier').placeholder = "Sponsor's tier";
+  $('#f-tyWord').placeholder = lb.sponsorWord || 'SPONSOR';
+  $('#f-tyMessage').placeholder = lb.thankYouMessage || '';
+  $('#f-season').placeholder = lb.season || '';
   for (const id of FIELD_IDS) {
     const el = $(`#f-${id}`);
+    if (el.type === 'checkbox') {
+      // Checkbox fields hold 'yes' or ''. The livestream wording box only shows when ticked.
+      el.addEventListener('change', () => {
+        state.fields[id] = el.checked ? 'yes' : '';
+        if (id === 'stream') $('#f-streamText').hidden = !el.checked;
+        updateCaption();
+        render();
+      });
+      continue;
+    }
     el.value = state.fields[id];
     el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', () => {
       state.fields[id] = el.value.trim();
@@ -301,6 +321,8 @@ function postData() {
     timeLabel: prettyTime(f.time),
     opponent: f.opponent,
     venue: f.venue,
+    context: f.context,
+    stream: f.stream ? f.streamText || config.labels?.livestream || 'WATCH THE STREAM' : '',
     ourScore: f.ourScore,
     theirScore: f.theirScore,
     headline: f.headline,
@@ -310,7 +332,13 @@ function postData() {
     people: [1, 2, 3].map((i) => ({ role: f[`p${i}Role`], name: f[`p${i}Name`] })).filter((p) => p.role || p.name),
     hasSponsor: !!sp,
     sponsorName: sp?.name || '',
-    sponsorTier: sp?.tier || '',
+    sponsorTier: f.tyTier || sp?.tier || '',
+    // Sponsor Thank-You wording: what's typed for this post, else config.json
+    eyebrow: f.eyebrow,
+    season: f.season,
+    supportLine: f.tySupport || config.labels?.supportLine || '',
+    sponsorWord: f.tyWord || config.labels?.sponsorWord || 'SPONSOR',
+    message: f.tyMessage || config.labels?.thankYouMessage || '',
     sponsorPlate: sp?.plate,
   };
 }
@@ -722,7 +750,7 @@ function updateCaption() {
     Opponent: f.opponent,
     Score: f.ourScore !== '' || f.theirScore !== '' ? `${f.ourScore || '0'}–${f.theirScore || '0'}` : '',
     Sponsor: sp?.name,
-    Tier: sp?.tier?.toLowerCase(),
+    Tier: (f.tyTier || sp?.tier)?.toLowerCase(),
     Date: prettyDate(f.date),
     Time: prettyTime(f.time),
     Venue: f.venue,
@@ -734,7 +762,9 @@ function updateCaption() {
     ClubHashtag: (tags[0] || '').replace(/^#/, ''),
     Sport: (config.sport || '').replace(/\s+/g, ''),
   };
-  let text = tplText;
+  // The stream line goes in first, as its own sentence, so dropping sponsor sentences can't take it.
+  const note = config.labels?.livestreamNote ? ` ${config.labels.livestreamNote}` : '';
+  let text = tplText.replace(/\[Stream\]\s*/g, f.stream ? `Can't make it? Watch the stream${note}! ` : '');
   // No sponsor: drop the sentences that mention one. A sponsor without a tier: drop the tier word.
   const dropSponsor = (t) => (t.match(/[^.!?]+[.!?]+\s*|[^.!?]+$/g) || []).filter((x) => !/\[(Sponsor|Tier)\]/.test(x)).join('');
   if (!sp) {
@@ -742,7 +772,7 @@ function updateCaption() {
     // Nothing left but hashtags (e.g. a sponsor thank-you): use the first caption that doesn't need a sponsor.
     if (!text.replace(/\[Hashtags\]|#\S+/g, '').trim()) text = list.find((c) => !/\[(Sponsor|Tier)\]/.test(c)) || text;
   }
-  else if (!sp.tier) text = text.replace(/\[Tier\]\s*/g, '');
+  else if (!f.tyTier && !sp.tier) text = text.replace(/\[Tier\]\s*/g, '');
   // Blank details stay as [Placeholder] so it's obvious what still needs filling in.
   $('#caption').value = text
     .replace(/\[(\w+)\]/g, (m, k) => (values[k] ? values[k] : m))
