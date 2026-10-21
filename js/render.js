@@ -256,14 +256,17 @@ function header(ctx, L, o, text) {
   spaced(ctx, L, brand.labels.eyebrow || '', x0, L.T + 46 * s, 'body', 600, 28 * s, 6 * s, 'left', colW);
   ctx.fillRect(x0, L.T + 76 * s, colW, 2 * s);
 
+  // The headline always starts the same distance below the gold rule, and is sized so
+  // its lines fit between there and the bottom of the badge.
   const lines = splitHeadline(ctx, L, text);
-  let fsize = 124 * s;
-  for (const line of lines) fsize = Math.min(fsize, fitSize(ctx, L, line, 'display', 700, 124 * s, colW));
+  const CAP = 0.72, LH = 1.02;                       // Domine cap height and line height, in em
+  const top = L.T + 78 * s + 42 * s, room = L.T + size - top;
+  let fsize = Math.min(124 * s, room / (CAP + LH * (lines.length - 1)));
+  for (const line of lines) fsize = Math.min(fsize, fitSize(ctx, L, line, 'display', 700, fsize, colW));
   ctx.font = font(L, 'display', 700, fsize);
   ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
-  const room = L.T + size - (L.T + 90 * s);
-  const lh = fsize * 1.02;
-  let y = L.T + 90 * s + (room - lh * lines.length) / 2 + fsize * 0.86;
+  const lh = fsize * LH;
+  let y = top + fsize * CAP;
   lines.forEach((line, i) => {
     ctx.fillStyle = lines.length > 1 && i === 0 ? brand.colors.text : (lines.length > 1 ? brand.colors.accent : brand.colors.text);
     ctx.fillText(line, x0, y);
