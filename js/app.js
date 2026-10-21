@@ -42,7 +42,6 @@ async function init() {
     return fatal(e.message);
   }
   sponsors = sponsors.filter((sp) => sp && sp.name && sp.active !== false);
-  if (!sponsors.length) return fatal('No active sponsors found in sponsors.json. Add one with "active": true.');
 
   loadPrefs();
   applyBranding();
@@ -143,13 +142,14 @@ function loadOverlays() {
   }
 }
 
+// The chosen sponsor, or null for "No sponsor" (always allowed).
 function currentSponsor() {
-  return sponsors.find((sp) => sp.name === state.sponsorName) || sponsors[0];
+  return sponsors.find((sp) => sp.name === state.sponsorName) || null;
 }
 
 async function ensureSponsorLogo() {
   const sp = currentSponsor();
-  if (!assets.sponsors.has(sp.name)) {
+  if (sp && !assets.sponsors.has(sp.name)) {
     const entry = { asset: null, error: null };
     assets.sponsors.set(sp.name, entry);
     if (!sp.logo) entry.error = `${sp.name} has no "logo" in sponsors.json.`;
@@ -164,7 +164,7 @@ async function ensureSponsorLogo() {
 
 function showLogoWarnings() {
   const sp = currentSponsor();
-  const entry = assets.sponsors.get(sp.name);
+  const entry = sp && assets.sponsors.get(sp.name);
   const msgs = [
     ...(assets.clubError ? [assets.clubError] : assets.club?.warnings || []),
     ...(entry?.error ? [`${entry.error} Showing the sponsor's name instead.`] : entry?.asset?.warnings || []),
@@ -179,7 +179,7 @@ function showLogoWarnings() {
 function loadPrefs() {
   const p = storageGet(PREFS_KEY) || {};
   if (TEMPLATES[p.template]) state.template = p.template;
-  state.sponsorName = sponsors.some((sp) => sp.name === p.sponsorName) ? p.sponsorName : sponsors[0].name;
+  state.sponsorName = p.sponsorName === '' || sponsors.some((sp) => sp.name === p.sponsorName) ? p.sponsorName : sponsors[0]?.name || '';
   if (p.out && Object.values(p.out).some(Boolean)) state.out = { ...state.out, ...p.out };
   if (p.fileType === 'png' || p.fileType === 'jpg') state.fileType = p.fileType;
   if (['2', '3', '4'].includes(p.collageCount)) state.fields.collageCount = p.collageCount;
@@ -254,7 +254,6 @@ function applyTemplate() {
   $('#subtextLabel').textContent = tourney ? 'Dates & location' : 'Small line';
   $('#f-subtext').placeholder = tourney ? 'e.g. May 15–17 · Mississauga' : 'Leave blank to show opponent and date';
   $('#photoCard').hidden = t.photos === 'none';
-  $('#sponsorCard').hidden = !t.sponsor;
   buildCaptionPick();
   updateCaption();
   renderThumbs();
@@ -263,7 +262,8 @@ function applyTemplate() {
 
 function buildSponsorSelect() {
   const sel = $('#sponsor');
-  sel.innerHTML = sponsors.map((sp) => `<option value="${esc(sp.name)}">${esc(sp.name)}${sp.tier ? ` (${esc(sp.tier)})` : ''}</option>`).join('');
+  sel.innerHTML = '<option value="">No sponsor</option>'
+    + sponsors.map((sp) => `<option value="${esc(sp.name)}">${esc(sp.name)}${sp.tier ? ` (${esc(sp.tier)})` : ''}</option>`).join('');
   sel.value = state.sponsorName;
   sel.onchange = () => {
     state.sponsorName = sel.value;
@@ -306,9 +306,10 @@ function postData() {
     placing: f.placing,
     record: f.record,
     people: [1, 2, 3].map((i) => ({ role: f[`p${i}Role`], name: f[`p${i}Name`] })).filter((p) => p.role || p.name),
-    sponsorName: sp.name,
-    sponsorTier: sp.tier || '',
-    sponsorPlate: sp.plate,
+    hasSponsor: !!sp,
+    sponsorName: sp?.name || '',
+    sponsorTier: sp?.tier || '',
+    sponsorPlate: sp?.plate,
   };
 }
 
@@ -318,7 +319,7 @@ function postOpts(group) {
     photos: group.map((p) => ({ img: p.img, fit: p.fit, crops: p.crops, ref: p })),
     data: postData(),
     brand: config,
-    assets: { club: assets.club, sponsor: assets.sponsors.get(currentSponsor().name)?.asset || null, overlays: assets.overlays },
+    assets: { club: assets.club, sponsor: assets.sponsors.get(state.sponsorName)?.asset || null, overlays: assets.overlays },
   };
 }
 
@@ -594,7 +595,7 @@ async function createImages(all) {
   }
   $('#progress').textContent = '';
   if (state.outputs.length) {
-    if (t.sponsor) logSponsorUse(groups.reduce((n, g) => n + g.length, 0));
+    if (currentSponsor()) logSponsorUse(groups.reduce((n, g) => n + g.length, 0));
     showOutputs();
   }
 }
@@ -602,7 +603,7 @@ async function createImages(all) {
 function fileName(format, index) {
   const f = state.fields;
   const label = {
-    'thank-you': `thanks-${slug(currentSponsor().name)}`,
+    'thank-you': currentSponsor() ? `thanks-${slug(currentSponsor().name)}` : 'thank-you',
     'tournament': slug(f.headline) || 'tournament',
     'meet-team': slug(f.headline || defaultHeadline()).toLowerCase(),
     'next-game': f.opponent ? `next-vs-${slug(f.opponent)}` : 'next-game',
@@ -711,18 +712,19 @@ function buildCaptionPick() {
 }
 
 function updateCaption() {
-  const tplText = captionList()[state.captionIdx] || captionList()[0] || '';
+  const list = captionList();
+  let tplText = list[state.captionIdx] || list[0] || '';
   const f = state.fields, sp = currentSponsor();
   const tags = config.hashtags || [];
   const values = {
     Opponent: f.opponent,
     Score: f.ourScore !== '' || f.theirScore !== '' ? `${f.ourScore || '0'}–${f.theirScore || '0'}` : '',
-    Sponsor: sp.name,
-    Tier: sp.tier ? sp.tier.toLowerCase() : '',
+    Sponsor: sp?.name,
+    Tier: sp?.tier?.toLowerCase(),
     Date: prettyDate(f.date),
     Time: prettyTime(f.time),
     Venue: f.venue,
-    Headline: f.headline || (state.template !== 'tournament' ? sentenceCase(defaultHeadline()) : ''),
+    Headline: f.headline || (state.template === 'meet-team' ? sentenceCase(defaultHeadline()) : ''),
     Placing: f.placing,
     Record: f.record,
     Club: config.clubName,
@@ -730,8 +732,17 @@ function updateCaption() {
     ClubHashtag: (tags[0] || '').replace(/^#/, ''),
     Sport: (config.sport || '').replace(/\s+/g, ''),
   };
+  let text = tplText;
+  // No sponsor: drop the sentences that mention one. A sponsor without a tier: drop the tier word.
+  const dropSponsor = (t) => (t.match(/[^.!?]+[.!?]+\s*|[^.!?]+$/g) || []).filter((x) => !/\[(Sponsor|Tier)\]/.test(x)).join('');
+  if (!sp) {
+    text = dropSponsor(text);
+    // Nothing left but hashtags (e.g. a sponsor thank-you): use the first caption that doesn't need a sponsor.
+    if (!text.replace(/\[Hashtags\]|#\S+/g, '').trim()) text = list.find((c) => !/\[(Sponsor|Tier)\]/.test(c)) || text;
+  }
+  else if (!sp.tier) text = text.replace(/\[Tier\]\s*/g, '');
   // Blank details stay as [Placeholder] so it's obvious what still needs filling in.
-  $('#caption').value = tplText
+  $('#caption').value = text
     .replace(/\[(\w+)\]/g, (m, k) => (values[k] ? values[k] : m))
     .replace(/[ \t]{2,}/g, ' ')
     .trim();

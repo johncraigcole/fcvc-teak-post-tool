@@ -15,34 +15,36 @@ export const FORMATS = {
 export const MAX_ZOOM = 5;
 const SPONSOR_ROW = 100;   // height of the "PRESENTED BY [logo]" row
 const RIBBON = 150;        // height of name/score ribbons
+const LINE = 50;           // a single line of text in place of the sponsor row
 
 // ---------- Templates ----------
 // photos: 'one' (one post per photo), 'multi' (collage of several), 'optional', or 'none'.
-// fields: which detail inputs the app shows. sponsor: whether a sponsor appears.
-// info: height (unscaled) of the area under the photo window.
+// fields: which detail inputs the app shows.
+// info(d): height (unscaled) of the area under the photo window. The sponsor is always
+// optional: d.hasSponsor is false when "No sponsor" is picked, and the row is left out.
 
 export const TEMPLATES = {
   'game-day': {
     name: 'Game Day Result',
-    desc: 'Score ribbons, date and "Presented by" sponsor',
-    photos: 'one', sponsor: true,
+    desc: 'Score ribbons, date and optional sponsor',
+    photos: 'one',
     fields: ['date', 'opponent', 'score'],
-    info: () => RIBBON + 26 + SPONSOR_ROW,
+    info: (d) => RIBBON + 26 + (d.hasSponsor ? SPONSOR_ROW : LINE),
     draw(ctx, L, o, box) {
       const d = o.data, gap = 30 * L.s;
       const w = (box.w - gap) / 2;
       ribbon(ctx, L, box.x, box.y, w, RIBBON * L.s, 'green', o.brand.clubShortName, d.ourScore || '–', 74);
       ribbon(ctx, L, box.x + w + gap, box.y, w, RIBBON * L.s, 'green', d.opponent || 'OPPONENT', d.theirScore || '–', 74);
-      sponsorRow(ctx, L, o, box.y + (RIBBON + 26) * L.s, d.dateLabel);
+      sponsorRow(ctx, L, o, box.y + (RIBBON + 26) * L.s, d.dateLabel);  // falls back to just the date
     },
   },
 
   'highlight': {
     name: 'Player / Moment Highlight',
     desc: 'Your headline (e.g. "Big save!") over a big photo',
-    photos: 'one', sponsor: true, headline: { label: 'Headline', placeholder: 'e.g. Big save!' },
+    photos: 'one', headline: { label: 'Headline', placeholder: 'e.g. Big save!' },
     fields: ['headline', 'subtext', 'date', 'opponent'],
-    info: () => SPONSOR_ROW,
+    info: (d) => (d.hasSponsor ? SPONSOR_ROW : subLine(d) ? LINE : 0),
     draw(ctx, L, o, box) {
       sponsorRow(ctx, L, o, box.y, subLine(o.data));
     },
@@ -51,9 +53,9 @@ export const TEMPLATES = {
   'collage': {
     name: 'Photo Collage',
     desc: '2–4 photos in one post. Mixes portrait and landscape',
-    photos: 'multi', sponsor: true, headline: { label: 'Headline', placeholder: 'e.g. Game day' },
+    photos: 'multi', headline: { label: 'Headline', placeholder: 'e.g. Game day' },
     fields: ['collageCount', 'headline', 'subtext', 'date', 'opponent'],
-    info: () => SPONSOR_ROW,
+    info: (d) => (d.hasSponsor ? SPONSOR_ROW : subLine(d) ? LINE : 0),
     draw(ctx, L, o, box) {
       sponsorRow(ctx, L, o, box.y, subLine(o.data));
     },
@@ -62,23 +64,24 @@ export const TEMPLATES = {
   'meet-team': {
     name: 'Meet the Team / Coaches',
     desc: 'Photo with up to 3 name ribbons',
-    photos: 'one', sponsor: false, headline: { label: 'Headline', placeholder: 'e.g. Meet the coaches' },
+    photos: 'one', headline: { label: 'Headline', placeholder: 'e.g. Meet the coaches' },
     fields: ['headline', 'people', 'date'],
-    info: () => RIBBON,
+    info: (d) => RIBBON + (d.hasSponsor ? 26 + SPONSOR_ROW : 0),
     draw(ctx, L, o, box) {
       const people = o.data.people.length ? o.data.people : [{ role: 'ROLE', name: 'Name' }];
       const gap = 24 * L.s, n = people.length;
       const w = (box.w - gap * (n - 1)) / n;
       people.forEach((p, i) => ribbon(ctx, L, box.x + i * (w + gap), box.y, w, RIBBON * L.s, 'green', p.role, p.name, n > 2 ? 46 : 56));
+      sponsorRow(ctx, L, o, box.y + (RIBBON + 26) * L.s);
     },
   },
 
   'next-game': {
     name: 'Next Game',
     desc: 'Upcoming match: opponent, date, time, venue',
-    photos: 'optional', sponsor: true,
+    photos: 'optional',
     fields: ['opponent', 'date', 'time', 'venue'],
-    info: () => 90 + 20 + 110 + 26 + SPONSOR_ROW,
+    info: (d) => 90 + 20 + 110 + (d.hasSponsor ? 26 + SPONSOR_ROW : 0),
     draw(ctx, L, o, box) {
       const { s } = L, d = o.data;
       const vs = `VS ${(d.opponent || 'OPPONENT').toUpperCase()}`;
@@ -98,9 +101,9 @@ export const TEMPLATES = {
   'tournament': {
     name: 'Tournament Result',
     desc: 'Event name, finish (medal colours) and record',
-    photos: 'one', sponsor: true, headline: { label: 'Event name', placeholder: 'e.g. Youth Nationals' },
+    photos: 'one', headline: { label: 'Event name', placeholder: 'e.g. Youth Nationals' },
     fields: ['headline', 'placing', 'record', 'subtext', 'date'],
-    info: () => RIBBON + 26 + SPONSOR_ROW,
+    info: (d) => RIBBON + (d.hasSponsor ? 26 + SPONSOR_ROW : d.record ? 26 + LINE : 0),
     draw(ctx, L, o, box) {
       const d = o.data, w = Math.min(box.w, 760 * L.s);
       ribbon(ctx, L, L.W / 2 - w / 2, box.y, w, RIBBON * L.s, medalStyle(d.placing),
@@ -111,18 +114,19 @@ export const TEMPLATES = {
 
   'thank-you': {
     name: 'Sponsor Thank-You',
-    desc: 'Sponsor tier ribbon and big logo. No photo needed',
-    photos: 'none', sponsor: true,
+    desc: 'Tier ribbon and big sponsor logo, or a general thank-you. No photo needed',
+    photos: 'none',
     fields: ['date'],
     draw(ctx, L, o, box) {
       const { s, brand } = L, d = o.data;
+      if (!d.hasSponsor) return thanksPanel(ctx, L, box);
       const msgSize = 29 * s, msgLine = 46 * s;
       ctx.font = font(L, 'body', 500, msgSize);
       const msg = wrapLines(ctx, (brand.labels.thankYouMessage || '').toUpperCase(), box.w - 80 * s, 2.5 * s);
-      const ribbonH = d.sponsorTier ? 130 * s : 0;
+      const ribbonH = d.hasSponsor && d.sponsorTier ? 130 * s : 0;
       const gap = 44 * s;
-      const fixed = 40 * s + gap + (ribbonH ? ribbonH + gap : 0) + gap + msg.length * msgLine;
-      const logoH = Math.max(160 * s, Math.min(400 * s, box.h - fixed));
+      const fixed = 40 * s + gap + (ribbonH ? ribbonH + gap : 0) + (d.hasSponsor ? gap : 0) + msg.length * msgLine;
+      const logoH = d.hasSponsor ? Math.max(160 * s, Math.min(400 * s, box.h - fixed)) : 0;
       let y = box.y + (box.h - fixed - logoH) / 2;
 
       ctx.fillStyle = brand.colors.text;
@@ -133,15 +137,38 @@ export const TEMPLATES = {
         ribbon(ctx, L, L.W / 2 - w / 2, y, w, ribbonH, medalStyle(d.sponsorTier), null, d.sponsorTier.toUpperCase(), 64, brand.labels.sponsorWord || 'SPONSOR');
         y += ribbonH + gap;
       }
-      const bw = Math.min(box.w, 900 * s);
-      logoBox(ctx, L, o, L.W / 2 - bw / 2, y, bw, logoH, 0.62);
-      y += logoH + gap;
+      if (d.hasSponsor) {
+        const bw = Math.min(box.w, 900 * s);
+        logoBox(ctx, L, o, L.W / 2 - bw / 2, y, bw, logoH, 0.62);
+        y += logoH + gap;
+      }
       ctx.font = font(L, 'body', 500, msgSize);
       ctx.fillStyle = brand.colors.text;
       msg.forEach((line, i) => spaced(ctx, L, line, L.W / 2, y + msgSize + i * msgLine, 'body', 500, msgSize, 2.5 * s, 'center'));
     },
   },
 };
+
+// General thank-you (no sponsor): support line and message, larger, in a gold double frame.
+function thanksPanel(ctx, L, box) {
+  const { s, brand } = L;
+  const size = 38 * s, line = 62 * s, sp = 3 * s, pad = 60 * s;
+  ctx.font = font(L, 'body', 500, size);
+  const msg = wrapLines(ctx, (brand.labels.thankYouMessage || '').toUpperCase(), box.w - pad * 2, sp);
+  const ph = Math.min(box.h - 30 * s, Math.max(420 * s, pad * 2 + 70 * s + msg.length * line));
+  const py = box.y + (box.h - ph) / 2, px = box.x + 15 * s, pw = box.w - 30 * s;
+  ctx.strokeStyle = brand.colors.accent;
+  ctx.lineWidth = 3 * s;
+  ctx.strokeRect(px, py, pw, ph);
+  ctx.lineWidth = 1.5 * s;
+  ctx.strokeRect(px + 9 * s, py + 9 * s, pw - 18 * s, ph - 18 * s);
+  let y = py + (ph - (70 * s + msg.length * line)) / 2 + 30 * s;
+  ctx.fillStyle = brand.colors.accent;
+  spaced(ctx, L, brand.labels.supportLine || '', L.W / 2, y, 'body', 600, 30 * s, 6 * s, 'center', pw - pad * 2);
+  ctx.fillStyle = brand.colors.text;
+  y += 40 * s + size;
+  msg.forEach((m, i) => spaced(ctx, L, m, L.W / 2, y + i * line, 'body', 500, size, sp, 'center'));
+}
 
 // Default headline text per template (config.headlines overrides).
 const DEFAULT_HEADLINES = {
@@ -175,8 +202,8 @@ export function drawPost(ctx, fmt, o) {
   if (t.photos === 'none') {
     t.draw(ctx, L, o, { x: L.M, y: top, w: contentW, h: bottom - top });
   } else {
-    const infoH = t.info() * s;
-    const win = { x: L.M + 14 * s, y: top + 14 * s, w: contentW - 28 * s, h: bottom - top - infoH - 34 * s - 28 * s };
+    const infoH = t.info(o.data) * s;
+    const win = { x: L.M + 14 * s, y: top + 14 * s, w: contentW - 28 * s, h: bottom - top - infoH - (infoH ? 34 * s : 0) - 28 * s };
     regions = photoWindow(ctx, L, o, win, fmt.id);
     t.draw(ctx, L, o, { x: L.M, y: bottom - infoH, w: contentW, h: infoH });
   }
@@ -445,8 +472,15 @@ function ribbon(ctx, L, x, y, w, h, style, label, value, valueSize = 60, labelBe
 }
 
 // "PRESENTED BY [logo box]", right-aligned when there's text on the left, else centred.
+// With no sponsor, just the left text, centred on its own line.
 function sponsorRow(ctx, L, o, y, leftText = '') {
   const { s, brand } = L, h = SPONSOR_ROW * s;
+  if (!o.data.hasSponsor) {
+    if (!leftText) return;
+    ctx.fillStyle = brand.colors.text;
+    spaced(ctx, L, leftText.toUpperCase(), L.W / 2, y + LINE * s / 2 + 10 * s, 'body', 500, 28 * s, 3 * s, 'center', L.W - 2 * L.M);
+    return;
+  }
   const label = brand.labels.presentedBy || 'PRESENTED BY';
   const lsize = 24 * s, sp = 4 * s;
   ctx.font = font(L, 'body', 600, lsize);

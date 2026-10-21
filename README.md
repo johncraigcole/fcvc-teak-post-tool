@@ -20,13 +20,13 @@ Turns game photos into consistently branded Instagram and Facebook images, with 
    | **Game Day Result** | Score ribbons (TEAK vs opponent), date, "Presented by [sponsor]" | 1 per post |
    | **Player / Moment Highlight** | Your headline (e.g. "Big save!") over a big photo | 1 per post |
    | **Photo Collage** | 2–4 photos in one post. Portrait and landscape can mix | 2–4 per post |
-   | **Meet the Team / Coaches** | Photo with up to 3 name ribbons (role + name). No sponsor | 1 per post |
+   | **Meet the Team / Coaches** | Photo with up to 3 name ribbons (role + name) | 1 per post |
    | **Next Game** | "VS opponent", date, time and venue | optional |
    | **Tournament Result** | Event name, finish ribbon (gold/silver/bronze colours) and record | 1 per post |
-   | **Sponsor Thank-You** | Sponsor tier ribbon (e.g. "SILVER SPONSOR"), big logo, thank-you message | none |
+   | **Sponsor Thank-You** | Sponsor tier ribbon (e.g. "SILVER SPONSOR"), big logo, thank-you message. With no sponsor, a general thank-you | none |
 
 3. **Add photos.** Pick one, or several from the same game (batch mode).
-4. **Pick the sponsor** and fill in the details. Headlines are optional; each template has a default (e.g. "Meet the coaches"). Long headlines split over two lines automatically. To choose where it splits, type a `|`, e.g. `Meet the|Team`.
+4. **Pick the sponsor, or "No sponsor"** (always allowed, on every template), and fill in the details. With no sponsor the "Presented by" row is left out, the photo gets the extra room, captions drop their sponsor sentence, and nothing goes in the sponsor log. Headlines are optional; each template has a default (e.g. "Meet the coaches"). Long headlines split over two lines automatically. To choose where it splits, type a `|`, e.g. `Meet the|Team`.
 5. **Adjust the crop** in the preview: drag to move, pinch (or use the slider) to zoom. Switch between **Feed / Story / Square** at the top; each size has its own crop. In Story, the pink bands show where Instagram puts its own buttons. They aren't in the final image.
    - **Show whole photo (no cropping)** fits the entire photo in the window over a blurred copy of itself. It's useful for a landscape shot in a tall post.
 6. With several photos, tap a thumbnail to adjust each one's crop. In a collage, tap a photo in the preview to select it. Template, sponsor and details apply to all of them.
