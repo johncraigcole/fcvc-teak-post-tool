@@ -2,7 +2,7 @@
 
 Turns game photos into consistently branded Instagram and Facebook images, with the club frame and a sponsor logo in exactly the same place every time.
 
-**Live app:** `https://<github-username>.github.io/<repo-name>/` *(fill in once GitHub Pages is switched on)*
+**Live app:** https://johncraigcole.github.io/fcvc-teak-post-tool/
 
 - 🔒 **Photos never leave your phone or laptop.** Everything happens in the browser. Nothing is uploaded or stored anywhere.
 - 🖼️ **Photos are never altered.** The app only crops, frames and adds logos and text. No AI.
