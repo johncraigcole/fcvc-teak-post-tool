@@ -77,6 +77,17 @@
           <label data-field="context">Game context <span class="opt">(optional)</span>
             <input type="text" id="f-context" placeholder="e.g. Gold Medal Game, In Pool Play" autocomplete="off" maxlength="30">
           </label>
+          <div data-field="teams" class="teams">
+            <p class="muted small">Other teams' logos (up to 8). Tap saved teams below, or tap a circle to add a logo from this device (pick several at once to fill the circles in order).</p>
+            <div class="team-slots" id="teamSlots"></div>
+            <div id="teamLibraryWrap" hidden>
+              <p class="muted small">Saved teams</p>
+              <div class="team-lib" id="teamLibrary"></div>
+            </div>
+            <label>Logo circle background
+              <select id="f-teamBg"></select>
+            </label>
+          </div>
           <label data-field="placing">Finish
             <input type="text" id="f-placing" placeholder="e.g. Gold medal, 2nd place" autocomplete="off" maxlength="24">
           </label>
@@ -115,9 +126,16 @@
           <label data-field="opponent">Opponent <span class="opt" data-opt-for="highlight collage">(optional)</span>
             <input type="text" id="f-opponent" placeholder="e.g. Riverside" autocomplete="off" maxlength="40">
           </label>
-          <label data-field="venue">Venue
+          <label data-field="venue"><span id="venueLabel">Venue</span>
             <input type="text" id="f-venue" placeholder="e.g. Western Rec Centre" autocomplete="off" maxlength="40">
           </label>
+          <div data-field="pool" class="pool">
+            <p class="muted small">Pool play <span class="opt">(optional · up to 4 games, approximate start times)</span></p>
+            <div class="game"><input type="time" id="f-g1Time" aria-label="Game 1 time"><select id="f-g1Team" aria-label="Game 1 opponent"></select></div>
+            <div class="game"><input type="time" id="f-g2Time" aria-label="Game 2 time"><select id="f-g2Team" aria-label="Game 2 opponent"></select></div>
+            <div class="game"><input type="time" id="f-g3Time" aria-label="Game 3 time"><select id="f-g3Team" aria-label="Game 3 opponent"></select></div>
+            <div class="game"><input type="time" id="f-g4Time" aria-label="Game 4 time"><select id="f-g4Team" aria-label="Game 4 opponent"></select></div>
+          </div>
           <div data-field="stream" class="stream">
             <label class="check"><input type="checkbox" id="f-stream"> Streaming this game</label>
             <input type="text" id="f-streamText" autocomplete="off" maxlength="40" aria-label="Stream wording" hidden>

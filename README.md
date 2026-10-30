@@ -23,6 +23,7 @@ Turns game photos into consistently branded Instagram and Facebook images, with 
    | **Meet the Team / Coaches** | Photo with up to 3 name ribbons (role + name) | 1 per post |
    | **Next Game** | "NEXT GAME" with an optional context line under it (e.g. "Gold Medal Game", "In Pool Play"), "VS opponent", date, time and venue, plus an optional "LIVE — watch the stream" banner for streamed games. Without a photo it shows poster-style artwork of a volleyball flying over the net and smashing through the club badge | optional |
    | **Tournament Result** | Event name, finish ribbon (gold/silver/bronze colours) and record | 1 per post |
+   | **Upcoming Tournament** | Tournament name as the headline, our badge large on the left, a gold "VS", and up to 8 other teams' logos in gold-ringed circles (tapped from the shared **Saved teams** list, see [HOW_TO_ADD_A_TEAM.md](HOW_TO_ADD_A_TEAM.md), or picked from the device; empty slots show "TBA" until any are added), plus date, time and location, an optional **pool play** schedule (up to 4 games: approximate start time and opponent, picked from Saved teams) shown beside the stream box, and the Next Game streaming banner without its gold "LIVE" tag (always shown; wording from `config.json` → `labels` → `tournamentStream` and `tournamentStreamNote`). The circles are white by default; pick transparent, black or club green for logos that need it | none |
    | **Sponsor Thank-You** | Laid out like the club's sponsor post: "THANK YOU", "For supporting our TEAK 16U team", tier ribbon (e.g. "SILVER SPONSOR"), a gold-framed logo box (transparent by default; volunteers can pick white, black, club colours or any custom colour, and each sponsor can set its own default; see [logos on black](HOW_TO_ADD_A_SPONSOR.md#logos-on-the-black-background)) and thank-you message. Every line can be reworded per post; blank boxes use the defaults from `config.json`. With no sponsor, a general thank-you | none |
 
 3. **Add photos.** Pick one, or several from the same game (batch mode).
@@ -59,12 +60,14 @@ Everything is changed through the GitHub website. Changes are live a minute or t
 | To change… | Edit |
 |---|---|
 | Add / retire a sponsor | [HOW_TO_ADD_A_SPONSOR.md](HOW_TO_ADD_A_SPONSOR.md) |
+| Add / retire another team's logo (Saved teams on Upcoming Tournament) | [HOW_TO_ADD_A_TEAM.md](HOW_TO_ADD_A_TEAM.md) |
 | Club name, colours, fonts, hashtags, sport | `config.json` |
 | **Season** ("2026 – 2027") and the small top line ("FCVC · TEAK 16U") | `config.json` → `labels` → `season` / `eyebrow` |
 | Default headlines ("FINAL SCORE", "MEET THE COACHES"…) | `config.json` → `headlines` |
 | Other wording on the images ("PRESENTED BY", the thank-you message…) | `config.json` → `labels` |
 | Caption wording | `config.json` → `captions` |
 | Club logo | replace `logos/club-logo.png` (same file name) |
+| Watermark logo behind the Upcoming Tournament matchup, and the colour laid over it | `config.json` → `tournamentBackdrop` (`logo`, `overlay` colour, `overlayStrength` from 0 = full colour logo to 1 = solid overlay colour, `size` as a share of the block height (0.5 = half, up to 300px); it sits behind the VS, and the club badge shrinks to make room; remove the block to turn it off) |
 
 **New season checklist:** update `labels.season`, the `eyebrow` if the age group changes, the club logo if it shows the year, and each sponsor's `tier` in `sponsors.json`.
 
@@ -181,6 +184,7 @@ js/hero.js            the Next Game artwork (drawn in code, no images needed)
 js/zip.js             tiny ZIP writer for "Download ZIP"
 config.json           branding, captions, labels
 sponsors.json         sponsor list
+teams.json            other teams' logos (Saved teams on Upcoming Tournament)
 logos/  fonts/  templates/
 ```
 

@@ -1,7 +1,7 @@
 // Club Post Maker: everything runs in the browser. Photos are read from the device,
 // drawn onto a canvas and saved back to the device. Nothing is ever uploaded.
 
-import { FORMATS, TEMPLATES, MAX_ZOOM, drawPost, drawGuides, defaultCrop, clampCrop, panCrop, loadLogo, blobToImage } from './render.js';
+import { FORMATS, TEMPLATES, MAX_ZOOM, drawPost, drawGuides, defaultCrop, clampCrop, panCrop, loadLogo, logoFromFile, blobToImage } from './render.js';
 import { makeZip } from './zip.js';
 
 const $ = (sel) => document.querySelector(sel);
@@ -12,12 +12,15 @@ const JPG_QUALITY = 0.92;
 
 const FIELD_IDS = ['date', 'time', 'opponent', 'venue', 'ourScore', 'theirScore', 'headline', 'subtext', 'placing', 'record',
   'p1Role', 'p1Name', 'p2Role', 'p2Name', 'p3Role', 'p3Name', 'collageCount', 'stream', 'streamText', 'context',
-  'eyebrow', 'tySupport', 'tyTier', 'tyWord', 'tyMessage', 'season', 'logoBg', 'logoBgCustom'];
+  'eyebrow', 'tySupport', 'tyTier', 'tyWord', 'tyMessage', 'season', 'logoBg', 'logoBgCustom', 'teamBg',
+  'g1Time', 'g1Team', 'g2Time', 'g2Team', 'g3Time', 'g3Team', 'g4Time', 'g4Team'];
+const TEAM_SLOTS = 8;
 
-let config, sponsors = [];
+let config, sponsors = [], teamList = [];
 const assets = { club: null, sponsors: new Map(), overlays: {} };
 const state = {
   photos: [],          // { id, name, img, thumb, fit, crops: { [key]: crop } }
+  teams: Array(TEAM_SLOTS).fill(null),   // other teams' logos for Upcoming Tournament: { asset, thumb, name, bg }
   sel: 0,
   format: 'feed',
   template: 'game-day',
@@ -44,6 +47,13 @@ async function init() {
     return fatal(e.message);
   }
   sponsors = sponsors.filter((sp) => sp && sp.name && sp.active !== false);
+  // The shared team logo library is optional: without teams.json the slots still take logos from the device
+  try { teamList = (await getJSON('teams.json')).filter((t) => t && t.name && t.logo && t.active !== false); }
+  catch (e) {
+    // A typo in teams.json should be noticed; a missing file just means no saved teams
+    if (/formatting mistake/.test(e.message)) setTimeout(() => toast('teams.json has a formatting mistake, so saved teams are hidden.'), 500);
+    console.warn(e.message);
+  }
 
   loadPrefs();
   applyBranding();
@@ -51,6 +61,7 @@ async function init() {
   buildTemplatePicker();
   buildSponsorSelect();
   bindFields();
+  bindTeams();
   bindPreview();
   bindPhotos();
   bindOutputs();
@@ -67,6 +78,11 @@ async function init() {
     .catch((e) => { assets.clubError = e.message; showLogoWarnings(); });
   ensureSponsorLogo();
   loadOverlays();
+  if (config.tournamentBackdrop?.logo) {
+    loadLogo(config.tournamentBackdrop.logo)
+      .then((a) => { assets.backdrop = a; render(); })
+      .catch((e) => console.warn(e.message));
+  }
 }
 
 // ---------- Config & branding ----------
@@ -253,10 +269,12 @@ function applyTemplate() {
   document.querySelectorAll('[data-field]').forEach((el) => { el.hidden = !t.fields.includes(el.dataset.field); });
   document.querySelectorAll('[data-opt-for]').forEach((el) => { el.hidden = !el.dataset.optFor.split(' ').includes(state.template); });
   $('#headlineLabel').textContent = t.headline?.label || 'Headline';
-  $('#f-headline').placeholder = t.headline ? `${t.headline.placeholder} (default: ${sentenceCase(defaultHeadline())})` : '';
+  $('#f-headline').placeholder = !t.headline ? '' : t.headline.below ? t.headline.placeholder
+    : `${t.headline.placeholder} (default: ${sentenceCase(defaultHeadline())})`;
   const tourney = state.template === 'tournament';
   $('#subtextLabel').textContent = tourney ? 'Dates & location' : 'Small line';
   $('#f-subtext').placeholder = tourney ? 'e.g. May 15–17 · Mississauga' : 'Leave blank to show opponent and date';
+  $('#venueLabel').textContent = state.template === 'tournament-preview' ? 'Location' : 'Venue';
   $('#photoCard').hidden = t.photos === 'none';
   buildCaptionPick();
   updateCaption();
@@ -295,6 +313,12 @@ function sponsorBackground(sp) {
 
 function bindFields() {
   buildLogoBgOptions();
+  const c = config.colors;
+  $('#f-teamBg').innerHTML = [['', 'White'], ['transparent', 'Transparent'], ['#0A0A0A', 'Black'], [c.primary, 'Club green']]
+    .map(([v, label]) => `<option value="${esc(v)}">${esc(label)}</option>`).join('');
+  // Pool play opponents come from the saved team list
+  const teamOpts = '<option value="">Opponent…</option>' + teamList.map((t) => `<option value="${esc(t.name)}">${esc(t.name)}</option>`).join('');
+  [1, 2, 3, 4].forEach((i) => { $(`#f-g${i}Team`).innerHTML = teamOpts; });
   $('#f-streamText').placeholder = `Wording (default: ${config.labels?.livestream || 'WATCH THE STREAM'})`;
   // Sponsor Thank-You text boxes show the default wording they'll use if left blank
   const lb = config.labels || {};
@@ -324,6 +348,93 @@ function bindFields() {
       render();
     });
   }
+}
+
+// Upcoming Tournament: eight slots for the other teams' logos, filled from the shared library
+// (teams.json) or from the device. Picking several files at once fills that slot and the
+// empty ones after it, in order.
+function bindTeams() {
+  buildTeamLibrary();
+  const box = $('#teamSlots');
+  for (let i = 0; i < TEAM_SLOTS; i++) {
+    const slot = document.createElement('div');
+    slot.className = 'team-slot';
+    slot.innerHTML = `<label class="team-pick" aria-label="Team logo ${i + 1}"><input type="file" accept="image/*" multiple><span class="num">${i + 1}</span></label>`
+      + `<button type="button" class="thumb-remove" aria-label="Remove team logo ${i + 1}" hidden>×</button>`;
+    slot.querySelector('input').addEventListener('change', async (e) => {
+      const files = [...e.target.files];
+      e.target.value = '';
+      let at = i, failed = 0;
+      for (const file of files) {
+        if (at >= TEAM_SLOTS) break;
+        try {
+          const asset = await logoFromFile(file);
+          state.teams[at] = { asset, thumb: asset.img.toDataURL('image/png') };
+        } catch {
+          failed++;
+          continue;
+        }
+        do at++; while (at < TEAM_SLOTS && state.teams[at]);
+      }
+      if (failed) toast(`${failed} logo${failed > 1 ? 's' : ''} couldn't be opened. Try PNG or JPG.`);
+      renderTeams();
+      clearOutputs();
+      render();
+    });
+    slot.querySelector('.thumb-remove').onclick = () => {
+      state.teams[i] = null;
+      renderTeams();
+      clearOutputs();
+      render();
+    };
+    box.appendChild(slot);
+  }
+}
+
+function renderTeams() {
+  document.querySelectorAll('.team-slot').forEach((slot, i) => {
+    const t = state.teams[i];
+    slot.querySelector('.team-pick').style.backgroundImage = t ? `url(${t.thumb})` : '';
+    slot.querySelector('.team-pick').title = t?.name || '';
+    slot.classList.toggle('filled', !!t);
+    slot.querySelector('.thumb-remove').hidden = !t;
+  });
+  document.querySelectorAll('#teamLibrary button').forEach((b) => {
+    b.setAttribute('aria-pressed', String(state.teams.some((t) => t?.name === b.dataset.name)));
+  });
+}
+
+// Saved teams: tap one to put it in the next empty slot, tap again to take it out.
+const teamLogos = new Map();   // name -> Promise of the trimmed logo
+function buildTeamLibrary() {
+  const box = $('#teamLibrary');
+  $('#teamLibraryWrap').hidden = !teamList.length;
+  box.innerHTML = teamList.map((t) => `<button type="button" data-name="${esc(t.name)}" aria-pressed="false">`
+    + `<img src="${esc(t.logo)}" alt="" loading="lazy"><span>${esc(t.name)}</span></button>`).join('');
+  box.querySelectorAll('button').forEach((b, k) => {
+    b.onclick = async () => {
+      const team = teamList[k];
+      const i = state.teams.findIndex((t) => t?.name === team.name);
+      if (i >= 0) state.teams[i] = null;
+      else {
+        const at = state.teams.indexOf(null);
+        if (at < 0) return toast('All 8 slots are full. Remove a team first.');
+        state.teams[at] = { pending: true, name: team.name };   // hold the slot while the logo loads
+        if (!teamLogos.has(team.name)) teamLogos.set(team.name, loadLogo(team.logo));
+        try {
+          const asset = await teamLogos.get(team.name);
+          state.teams[at] = { asset, thumb: team.logo, name: team.name, bg: team.background };
+        } catch (e) {
+          teamLogos.delete(team.name);
+          state.teams[at] = null;
+          toast(`${team.name}'s logo couldn't be loaded.`);
+        }
+      }
+      renderTeams();
+      clearOutputs();
+      render();
+    };
+  });
 }
 
 function defaultHeadline() {
@@ -358,6 +469,9 @@ function postData() {
     sponsorWord: f.tyWord || config.labels?.sponsorWord || 'SPONSOR',
     message: f.tyMessage || config.labels?.thankYouMessage || '',
     sponsorPlate: sp?.plate,
+    teamBg: f.teamBg || '#FFFFFF',
+    // Pool play games with a time or an opponent, in the order entered
+    pool: [1, 2, 3, 4].map((i) => ({ time: prettyTime(f[`g${i}Time`]), team: f[`g${i}Team`] })).filter((g) => g.time || g.team),
     logoBg: f.logoBg === 'custom' ? (f.logoBgCustom || '#ffffff') : f.logoBg || sponsorBackground(sp),
   };
 }
@@ -368,7 +482,10 @@ function postOpts(group) {
     photos: group.map((p) => ({ img: p.img, fit: p.fit, crops: p.crops, ref: p })),
     data: postData(),
     brand: config,
-    assets: { club: assets.club, sponsor: assets.sponsors.get(state.sponsorName)?.asset || null, overlays: assets.overlays },
+    assets: {
+      club: assets.club, backdrop: assets.backdrop, sponsor: assets.sponsors.get(state.sponsorName)?.asset || null, overlays: assets.overlays,
+      teams: state.teams.filter((t) => t?.asset).map((t) => ({ ...t.asset, bg: t.bg })),
+    },
   };
 }
 
@@ -654,6 +771,7 @@ function fileName(format, index) {
   const label = {
     'thank-you': currentSponsor() ? `thanks-${slug(currentSponsor().name)}` : 'thank-you',
     'tournament': slug(f.headline) || 'tournament',
+    'tournament-preview': slug(f.headline) || 'upcoming-tournament',
     'meet-team': slug(f.headline || defaultHeadline()).toLowerCase(),
     'next-game': f.opponent ? `next-vs-${slug(f.opponent)}` : 'next-game',
   }[state.template] || (f.opponent ? `vs-${slug(f.opponent)}` : slug(f.headline) || state.template);

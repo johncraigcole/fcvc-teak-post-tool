@@ -125,6 +125,44 @@ export const TEMPLATES = {
     },
   },
 
+  'tournament-preview': {
+    name: 'Upcoming Tournament',
+    desc: 'Our badge vs up to 8 team logos, date, time, location',
+    photos: 'none', noBadge: true,   // the badge is already the centrepiece, so the header is text only
+    oneLine: true,                   // "UPCOMING TOURNAMENT" always, on one line, with the name under it
+    headline: { label: 'Tournament name', placeholder: 'e.g. Ontario Cup', below: true },
+    fields: ['headline', 'teams', 'date', 'time', 'venue', 'pool'],
+    // Our badge, a gold VS and the other teams' logos, with date / time / location under them
+    // and the Next Game stream banner (always shown: every tournament is streamed on YouTube).
+    // With pool play games entered, the schedule and a stream box sit side by side instead.
+    draw(ctx, L, o, box) {
+      const { s, brand } = L, d = o.data;
+      const poolH = d.pool.length ? poolHeight(L, d.pool.length) : 0;
+      const infoH = 110 * s, streamH = 26 * s + (poolH || STREAM_ROW * s), spH = d.hasSponsor ? (26 + SPONSOR_ROW) * s : 0;
+      const area = { x: box.x, y: box.y, w: box.w, h: box.h - infoH - streamH - spH - 30 * s };
+      // Same gold-framed green panel as an empty photo window, without the faint badge
+      const pad = 34 * s;
+      framedPanel(ctx, L, area);
+      matchup(ctx, L, o, { x: area.x + pad, y: area.y + pad, w: area.w - 2 * pad, h: area.h - 2 * pad });
+      const y = area.y + area.h + 30 * s;
+      iconRow(ctx, L, box.x, y, box.w, infoH, [
+        ['calendar', 'DATE', d.dateShort || 'TBC'],
+        ['clock', 'TIME', d.timeLabel || 'TBC'],
+        ['pin', 'LOCATION', d.venue || 'TBC'],
+      ], true);
+      const streamText = brand.labels.tournamentStream || 'WATCH LIVE ON YOUTUBE';
+      const streamNote = brand.labels.tournamentStreamNote ?? brand.labels.livestreamNote;
+      if (poolH) {
+        const gap = 24 * s, pw = (box.w - gap) * 0.6, sy = y + infoH + 26 * s;
+        poolTable(ctx, L, box.x, sy, pw, poolH, d.pool);
+        streamBox(ctx, L, box.x + pw + gap, sy, box.w - pw - gap, poolH, streamText, streamNote);
+      } else {
+        streamRow(ctx, L, y + infoH + 26 * s, Math.min(box.w, 860 * s), streamText, streamNote, false);
+      }
+      sponsorRow(ctx, L, o, y + infoH + streamH + 26 * s);
+    },
+  },
+
   'thank-you': {
     name: 'Sponsor Thank-You',
     desc: 'Tier ribbon and big sponsor logo, or a general thank-you. No photo needed',
@@ -211,10 +249,113 @@ function thanksPanel(ctx, L, box, d) {
   msg.forEach((m, i) => spaced(ctx, L, m, L.W / 2, y + i * line, 'body', 500, size, sp, 'center'));
 }
 
+// Club badge on the left, a gold VS, and the other teams' logos in circles on the right
+// (two columns when there are more than four). With no logos added, eight "TBA" circles.
+function matchup(ctx, L, o, r) {
+  const { s, brand } = L;
+  const teams = o.assets.teams?.length ? o.assets.teams : Array(8).fill(null);
+  // With a backdrop logo the middle column widens to hold it, and the badge and team circles
+  // get smaller to make room (the badge stays well over twice the size of a circle)
+  const bd = o.assets.backdrop, opt = brand.tournamentBackdrop || {};
+  const n = teams.length, g = 20 * s;
+  const bdSize = bd ? Math.min(r.h * (opt.size ?? 0.5), 300 * s) : 0;
+  const vsW = Math.max(150 * s, bdSize + 30 * s);
+  // Tall grid (2 columns) or wide grid (4 columns), whichever gives bigger circles in this space
+  const layout = (cols) => {
+    const rows = Math.ceil(n / cols);
+    const tile = Math.min((bd ? 135 : 170) * s, (r.h - g * (rows - 1)) / rows, (r.w - vsW - g * (cols - 1)) / (cols + 2.2));
+    return { cols, rows, tile };
+  };
+  const { cols, rows, tile } = [n > 4 ? 2 : 1, n > 4 ? 4 : n].map(layout).reduce((a, b) => (b.tile > a.tile + 1 ? b : a));
+  const gridW = cols * tile + (cols - 1) * g, gridH = rows * tile + (rows - 1) * g;
+  const club = Math.min(r.h, (bd ? 360 : 480) * s, r.w - gridW - vsW);
+  const x0 = r.x + (r.w - club - vsW - gridW) / 2, cy = r.y + r.h / 2;
+  const vx = x0 + club + vsW / 2;
+  if (bd) backdrop(ctx, L, bd, vx, cy, bdSize, opt);
+
+  // Badge on a soft green glow
+  const gx = x0 + club / 2;
+  const glow = ctx.createRadialGradient(gx, cy, 0, gx, cy, club * 0.62);
+  glow.addColorStop(0, rgba(brand.colors.primary, 0.75));
+  glow.addColorStop(1, rgba(brand.colors.primary, 0));
+  ctx.fillStyle = glow;
+  ctx.fillRect(gx - club * 0.62, cy - club * 0.62, club * 1.24, club * 1.24);
+  if (o.assets.club) {
+    const fit = fitBox(o.assets.club, club * 0.92, club * 0.92);
+    ctx.drawImage(o.assets.club.img, gx - fit.w / 2, cy - fit.h / 2, fit.w, fit.h);
+  }
+
+  // VS between gold rules
+  const vsize = 72 * s;
+  ctx.fillStyle = brand.colors.accent;
+  ctx.fillRect(vx - 1 * s, r.y + r.h * 0.12, 2 * s, r.h / 2 - r.h * 0.12 - vsize * 0.75);
+  ctx.fillRect(vx - 1 * s, cy + vsize * 0.75, 2 * s, r.h / 2 - r.h * 0.12 - vsize * 0.75);
+  ctx.font = font(L, 'display', 700, vsize);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+  ctx.fillText('VS', vx, cy + vsize * 0.36);
+
+  // Team logos; a part-filled last row is centred under the others
+  const tx = x0 + club + vsW, ty = cy - gridH / 2;
+  const lastRow = rows - 1, inLast = n - lastRow * cols;
+  teams.forEach((a, i) => {
+    const row = Math.floor(i / cols), col = i % cols;
+    const shift = row === lastRow ? (cols - inLast) * (tile + g) / 2 : 0;
+    const x = tx + shift + col * (tile + g);
+    teamCircle(ctx, L, a, x + tile / 2, ty + row * (tile + g) + tile / 2, tile / 2, a?.bg || o.data.teamBg);
+  });
+}
+
+// A logo centred behind the VS, with a colour laid over just the logo so it reads as a
+// watermark (config.json → tournamentBackdrop: overlay colour and strength, size).
+function backdrop(ctx, L, a, cx, cy, size, opt) {
+  const fit = fitBox(a, size, size);
+  const c = document.createElement('canvas');
+  c.width = Math.round(fit.w); c.height = Math.round(fit.h);
+  const bctx = c.getContext('2d');
+  bctx.drawImage(a.img, 0, 0, c.width, c.height);
+  bctx.globalCompositeOperation = 'source-atop';
+  bctx.globalAlpha = opt.overlayStrength ?? 0.7;
+  bctx.fillStyle = opt.overlay || L.brand.colors.background;
+  bctx.fillRect(0, 0, c.width, c.height);
+  ctx.drawImage(c, cx - fit.w / 2, cy - fit.h / 2);
+  c.width = c.height = 0;
+}
+
+// One team logo in a gold-ringed circle, or a dashed "TBA" circle when there's no logo.
+function teamCircle(ctx, L, a, cx, cy, rad, bg) {
+  const { s, brand } = L;
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(cx, cy, rad - 2 * s, 0, Math.PI * 2);
+  if (!a) {
+    ctx.fillStyle = rgba(brand.colors.primary, 0.35);
+    ctx.fill();
+    ctx.setLineDash([8 * s, 7 * s]);
+    ctx.strokeStyle = brand.colors.accent;
+    ctx.lineWidth = 2.5 * s;
+    ctx.stroke();
+    ctx.fillStyle = brand.colors.accent;
+    spaced(ctx, L, 'TBA', cx, cy + 10 * s, 'body', 600, Math.min(28 * s, rad * 0.4), 4 * s, 'center');
+    ctx.restore();
+    return;
+  }
+  if (bg !== 'transparent') {
+    ctx.fillStyle = bg;
+    ctx.fill();
+  }
+  ctx.strokeStyle = brand.colors.accent;
+  ctx.lineWidth = 3 * s;
+  ctx.stroke();
+  const fit = fitBox(a, rad * 1.36, rad * 1.36);
+  ctx.drawImage(a.img, cx - fit.w / 2, cy - fit.h / 2, fit.w, fit.h);
+  ctx.restore();
+}
+
 // Default headline text per template (config.headlines overrides).
 const DEFAULT_HEADLINES = {
   'game-day': 'FINAL SCORE', 'highlight': 'GAME HIGHLIGHT', 'collage': 'GAME DAY', 'meet-team': 'MEET THE TEAM',
-  'next-game': 'NEXT GAME', 'tournament': 'TOURNAMENT RESULT', 'thank-you': 'THANK YOU',
+  'next-game': 'NEXT GAME', 'tournament': 'TOURNAMENT RESULT', 'tournament-preview': 'UPCOMING TOURNAMENT',
+  'thank-you': 'THANK YOU',
 };
 
 // ---------- Main entry ----------
@@ -259,7 +400,8 @@ export function drawPost(ctx, fmt, o) {
 }
 
 function headlineText(o) {
-  const custom = TEMPLATES[o.template].headline && o.data.headline;
+  const h = TEMPLATES[o.template].headline;
+  const custom = h && !h.below && o.data.headline;   // below: the typed text goes under the headline instead
   return (custom || o.brand.headlines?.[o.template] || DEFAULT_HEADLINES[o.template]).toUpperCase();
 }
 
@@ -288,53 +430,58 @@ export function drawGuides(ctx, fmt) {
 // ---------- Header & footer ----------
 
 // Badge on the left; eyebrow, gold rule and two-line headline (cream / gold) on the right.
+// Templates with noBadge leave the badge out and centre the text across the full width.
 function header(ctx, L, o, text) {
   const { s, brand } = L;
   const size = 300 * s;
-  if (o.assets.club) {
+  const t = TEMPLATES[o.template];
+  if (o.assets.club && !t.noBadge) {
     const fit = fitBox(o.assets.club, size, size);
     ctx.drawImage(o.assets.club.img, L.M + (size - fit.w) / 2, L.T + (size - fit.h) / 2, fit.w, fit.h);
   }
-  const x0 = L.M + size + 44 * s, x1 = L.W - L.M, colW = x1 - x0;
-  const t = TEMPLATES[o.template];
+  const x0 = t.noBadge ? L.M : L.M + size + 44 * s, x1 = L.W - L.M, colW = x1 - x0;
+  const align = t.noBadge ? 'center' : 'left', tx = t.noBadge ? L.W / 2 : x0;
   const eyebrow = (t.fields.includes('eyebrow') && o.data.eyebrow) || brand.labels.eyebrow || '';
   ctx.fillStyle = brand.colors.accent;
-  spaced(ctx, L, eyebrow.toUpperCase(), x0, L.T + 30 * s, 'body', 600, 28 * s, 6 * s, 'left', colW);
+  spaced(ctx, L, eyebrow.toUpperCase(), tx, L.T + 30 * s, 'body', 600, 28 * s, 6 * s, align, colW);
   ctx.fillRect(x0, L.T + 58 * s, colW, 2 * s);
 
   // The headline always starts the same distance below the gold rule, and is sized so
   // its lines fit between there and the bottom of the badge (proportions from the club's posts).
   const CAP = 0.72, LH = 0.98;                       // Domine cap height and line height, in em
   const top = L.T + 60 * s + 42 * s, room = L.T + size - top;
-  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
-  const sub = t.fields.includes('context') ? (o.data.context || '').toUpperCase() : '';
+  ctx.textAlign = align; ctx.textBaseline = 'alphabetic';
+  const sub = ((t.headline?.below ? o.data.headline : t.fields.includes('context') ? o.data.context : '') || '').toUpperCase();
   if (sub) {
     // One-line headline in cream with a smaller gold context line under it (e.g. GOLD MEDAL GAME)
     const GAP = 0.34, SUB = 0.6;
     let fsize = Math.min(124 * s, room / (CAP + GAP + SUB * CAP));
     fsize = fitSize(ctx, L, text, 'display', 700, fsize, colW);
     const ssize = fitSize(ctx, L, sub, 'display', 700, fsize * SUB, colW);
-    const y = top + fsize * CAP;
+    // A name under the headline (Upcoming Tournament) swaps the colours: gold headline, cream name
+    const y = top + fsize * CAP, below = t.headline?.below;
     ctx.font = font(L, 'display', 700, fsize);
-    ctx.fillStyle = brand.colors.text;
-    ctx.fillText(text, x0, y);
+    ctx.fillStyle = below ? brand.colors.accent : brand.colors.text;
+    ctx.fillText(text, tx, y);
     ctx.font = font(L, 'display', 700, ssize);
-    ctx.fillStyle = brand.colors.accent;
-    ctx.fillText(sub, x0, y + fsize * GAP + ssize * CAP);
-    return L.T + size;
+    ctx.fillStyle = below ? brand.colors.text : brand.colors.accent;
+    ctx.fillText(sub, tx, y + fsize * GAP + ssize * CAP);
+    // Without the badge the header ends at the text, giving the content below more room
+    return t.noBadge ? y + fsize * GAP + ssize * CAP + 10 * s : L.T + size;
   }
   const lines = t.oneLine ? [text] : splitHeadline(ctx, L, text);
   let fsize = Math.min(132 * s, room / (CAP + LH * (lines.length - 1)));
   for (const line of lines) fsize = Math.min(fsize, fitSize(ctx, L, line, 'display', 700, fsize, colW));
   ctx.font = font(L, 'display', 700, fsize);
+  ctx.textAlign = align;
   const lh = fsize * LH;
   let y = top + fsize * CAP;
   lines.forEach((line, i) => {
-    ctx.fillStyle = lines.length > 1 && i === 0 ? brand.colors.text : (lines.length > 1 ? brand.colors.accent : brand.colors.text);
-    ctx.fillText(line, x0, y);
+    ctx.fillStyle = lines.length > 1 && i === 0 ? brand.colors.text : (lines.length > 1 || t.headline?.below ? brand.colors.accent : brand.colors.text);
+    ctx.fillText(line, tx, y);
     y += lh;
   });
-  return L.T + size;
+  return t.noBadge ? y - lh + 10 * s : L.T + size;
 }
 
 // "MEET THE|COACHES" splits at the bar; otherwise split into two balanced lines.
@@ -445,17 +592,35 @@ function drawPhotoIn(ctx, L, o, ph, r, key) {
 
 // Shown when a template's photo is optional and none was added (or in the empty preview).
 function placeholderPanel(ctx, L, o, r) {
-  const g = ctx.createRadialGradient(r.x + r.w / 2, r.y + r.h / 2, 0, r.x + r.w / 2, r.y + r.h / 2, Math.max(r.w, r.h) * 0.7);
-  g.addColorStop(0, L.brand.colors.primary);
-  g.addColorStop(1, L.brand.colors.background);
-  ctx.fillStyle = g;
-  ctx.fillRect(r.x, r.y, r.w, r.h);
+  greenGlow(ctx, L, r);
   if (o.assets.club) {
     const fit = fitBox(o.assets.club, r.w * 0.6, r.h * 0.75);
     ctx.globalAlpha = 0.18;
     ctx.drawImage(o.assets.club.img, r.x + (r.w - fit.w) / 2, r.y + (r.h - fit.h) / 2, fit.w, fit.h);
     ctx.globalAlpha = 1;
   }
+}
+
+// Club green fading out to the background from the centre.
+function greenGlow(ctx, L, r) {
+  const g = ctx.createRadialGradient(r.x + r.w / 2, r.y + r.h / 2, 0, r.x + r.w / 2, r.y + r.h / 2, Math.max(r.w, r.h) * 0.7);
+  g.addColorStop(0, L.brand.colors.primary);
+  g.addColorStop(1, L.brand.colors.background);
+  ctx.fillStyle = g;
+  ctx.fillRect(r.x, r.y, r.w, r.h);
+}
+
+// The photo window's look with no photo: green glow inside a gold double frame whose outer
+// line is the edge of r.
+function framedPanel(ctx, L, r) {
+  const { s, brand } = L;
+  const win = { x: r.x + 14 * s, y: r.y + 14 * s, w: r.w - 28 * s, h: r.h - 28 * s };
+  greenGlow(ctx, L, win);
+  ctx.strokeStyle = brand.colors.accent;
+  ctx.lineWidth = 3 * s;
+  ctx.strokeRect(r.x, r.y, r.w, r.h);
+  ctx.lineWidth = 2 * s;
+  ctx.strokeRect(win.x - 5 * s, win.y - 5 * s, win.w + 10 * s, win.h + 10 * s);
 }
 
 function coverScale(iw, ih, W, H, zoom) {
@@ -600,7 +765,8 @@ function logoBox(ctx, L, o, x, y, w, h, fill, bg) {
 
 // Livestream banner: a gold "● LIVE" tag and the wording, in a gold-edged green bar, with an
 // optional small note centred underneath, e.g. "(cellular network permitting)".
-function streamRow(ctx, L, y, w, text, note) {
+// tag false leaves out the LIVE tag and centres the wording in the whole bar.
+function streamRow(ctx, L, y, w, text, note, tag = true) {
   const { s, brand } = L, h = STREAM_ROW * s, x = L.W / 2 - w / 2;
   ctx.save();
   roundRect(ctx, x, y, w, h, h / 2);
@@ -611,17 +777,19 @@ function streamRow(ctx, L, y, w, text, note) {
   ctx.stroke();
   // LIVE tag
   const tw = 128 * s, th = 50 * s, tx = x + 16 * s, ty = y + (h - th) / 2;
-  roundRect(ctx, tx, ty, tw, th, th / 2);
-  ctx.fillStyle = brand.colors.accent;
-  ctx.fill();
-  ctx.fillStyle = '#141414';
-  ctx.beginPath();
-  ctx.arc(tx + 26 * s, ty + th / 2, 7 * s, 0, Math.PI * 2);
-  ctx.fill();
-  spaced(ctx, L, 'LIVE', tx + 42 * s, ty + th / 2 + 9 * s, 'body', 600, 26 * s, 4 * s, 'left');
+  if (tag) {
+    roundRect(ctx, tx, ty, tw, th, th / 2);
+    ctx.fillStyle = brand.colors.accent;
+    ctx.fill();
+    ctx.fillStyle = '#141414';
+    ctx.beginPath();
+    ctx.arc(tx + 26 * s, ty + th / 2, 7 * s, 0, Math.PI * 2);
+    ctx.fill();
+    spaced(ctx, L, 'LIVE', tx + 42 * s, ty + th / 2 + 9 * s, 'body', 600, 26 * s, 4 * s, 'left');
+  }
   // Wording
   ctx.fillStyle = brand.colors.text;
-  const left = tx + tw + 20 * s, room = x + w - 24 * s - left, mid = left + room / 2;
+  const left = tag ? tx + tw + 20 * s : x + 24 * s, room = x + w - 24 * s - left, mid = left + room / 2;
   spaced(ctx, L, text.toUpperCase(), mid, y + (note ? h * 0.44 : h * 0.5 + 9 * s), 'body', 600, 26 * s, 3.5 * s, 'center', room);
   if (note) {
     ctx.fillStyle = rgba(brand.colors.text, 0.75);
@@ -630,25 +798,122 @@ function streamRow(ctx, L, y, w, text, note) {
   ctx.restore();
 }
 
-// Three columns of [icon] LABEL / value, separated by thin gold rules.
-function iconRow(ctx, L, x, y, w, h, items) {
+// Pool play schedule: "POOL PLAY" header and one row per game (opponent, then the approximate
+// time right-aligned under "APPROX. TIMES"),
+// in the same gold-edged green box style as the stream banner.
+const POOL_HEAD = 58, POOL_ROW = 40, POOL_PAD = 12;
+function poolHeight(L, n) {
+  return (POOL_HEAD + n * POOL_ROW + POOL_PAD) * L.s;
+}
+
+function poolTable(ctx, L, x, y, w, h, games) {
+  const { s, brand } = L, padX = 26 * s;
+  ctx.save();
+  greenBox(ctx, L, x, y, w, h);
+  ctx.fillStyle = brand.colors.accent;
+  spaced(ctx, L, 'POOL PLAY', x + padX, y + 38 * s, 'body', 600, 24 * s, 5 * s, 'left');
+  ctx.fillStyle = rgba(brand.colors.text, 0.7);
+  spaced(ctx, L, 'APPROX. TIMES', x + w - padX, y + 37 * s, 'body', 500, 16 * s, 2.5 * s, 'right');
+  ctx.fillStyle = brand.colors.accent;
+  ctx.fillRect(x + padX, y + (POOL_HEAD - 6) * s, w - 2 * padX, 2 * s);
+  // Times right-aligned in their own column, so the team names get the rest of the width
+  ctx.font = font(L, 'body', 600, 25 * s);
+  const timeW = Math.max(...games.map((g) => ctx.measureText(g.time || 'TBC').width)) + 22 * s;
+  games.forEach((g, i) => {
+    const ry = y + (POOL_HEAD + i * POOL_ROW) * s, base = ry + POOL_ROW * s / 2 + 9 * s;
+    if (i) { ctx.fillStyle = rgba(brand.colors.accent, 0.3); ctx.fillRect(x + padX, ry, w - 2 * padX, 1 * s); }
+    ctx.textBaseline = 'alphabetic';
+    const tw = w - 2 * padX - timeW, name = g.team || 'TBA';
+    ctx.textAlign = 'left';
+    ctx.font = font(L, 'body', 600, fitSize(ctx, L, name, 'body', 600, 25 * s, tw));
+    ctx.fillStyle = brand.colors.text;
+    ctx.fillText(name, x + padX, base);
+    ctx.textAlign = 'right';
+    ctx.font = font(L, 'body', 600, 25 * s);
+    ctx.fillStyle = brand.colors.accent;
+    ctx.fillText(g.time || 'TBC', x + w - padX, base);
+  });
+  ctx.restore();
+}
+
+// The stream banner as a box beside the pool play table: wording wrapped and centred, and the
+// note under it on one line (shrunk slightly if it must be).
+function streamBox(ctx, L, x, y, w, h, text, note) {
+  const { s, brand } = L, room = w - 40 * s, size = 26 * s, sp = 3.5 * s, line = size * 1.35;
+  ctx.save();
+  greenBox(ctx, L, x, y, w, h);
+  ctx.font = font(L, 'body', 600, size);
+  const lines = wrapLines(ctx, text.toUpperCase(), room, sp).slice(0, 3);
+  ctx.font = font(L, 'body', 500, 19 * s);
+  const notes = note ? [note] : [];
+  const blockH = lines.length * line + (notes.length ? 10 * s + notes.length * 26 * s : 0);
+  let ty = y + (h - blockH) / 2 + size * 0.85;
+  ctx.fillStyle = brand.colors.text;
+  lines.forEach((t) => { spaced(ctx, L, t, x + w / 2, ty, 'body', 600, size, sp, 'center', room); ty += line; });
+  ty += 10 * s - line + 26 * s;
+  ctx.fillStyle = rgba(brand.colors.text, 0.75);
+  notes.forEach((t) => { spaced(ctx, L, t, x + w / 2, ty, 'body', 500, 19 * s, 1 * s, 'center', room); ty += 26 * s; });
+  ctx.restore();
+}
+
+function greenBox(ctx, L, x, y, w, h) {
+  const { s, brand } = L;
+  roundRect(ctx, x, y, w, h, 22 * s);
+  ctx.fillStyle = rgba(brand.colors.primary, 0.85);
+  ctx.fill();
+  ctx.strokeStyle = brand.colors.accent;
+  ctx.lineWidth = 2.5 * s;
+  ctx.stroke();
+}
+
+// Three columns of [icon] LABEL / value, separated by thin gold rules. A value too long for
+// its column (e.g. a venue name) wraps onto two lines before it's shrunk.
+// centred: each icon-and-text group sits in the middle of its column instead of at its left.
+function iconRow(ctx, L, x, y, w, h, items, centred = false) {
   const { s, brand } = L, colW = w / items.length, r = 34 * s;
   items.forEach(([icon, label, value], i) => {
     const cx = x + i * colW;
     if (i) { ctx.fillStyle = brand.colors.accent; ctx.fillRect(cx, y + 14 * s, 2 * s, h - 28 * s); }
-    const ix = cx + 22 * s + r, iy = y + h / 2;
+    let ix = cx + 22 * s + r;
+    const iy = y + h / 2, tw = cx + colW - (ix + r + 16 * s) - 12 * s;
+    const val = valueLines(ctx, L, value, 30 * s, tw);
+    if (centred) {
+      ctx.font = font(L, 'body', 600, 20 * s);
+      const lw = Math.min(tw, spacedWidth(ctx, label, 4 * s));
+      ctx.font = font(L, 'body', 600, val.size);
+      const groupW = 2 * r + 16 * s + Math.max(lw, ...val.lines.map((t) => ctx.measureText(t).width));
+      ix = cx + (colW - groupW) / 2 + r;
+    }
     ctx.strokeStyle = brand.colors.accent;
     ctx.lineWidth = 3 * s;
     ctx.beginPath(); ctx.arc(ix, iy, r, 0, Math.PI * 2); ctx.stroke();
     drawIcon(ctx, icon, ix, iy, r * 0.5, s, brand.colors.accent);
-    const tx = ix + r + 16 * s, tw = cx + colW - tx - 12 * s;
+    // Two lines move up so the label and both lines stay centred on the icon
+    const two = val.lines.length > 1, tx = ix + r + 16 * s;
     ctx.fillStyle = brand.colors.accent;
-    spaced(ctx, L, label, tx, iy - 8 * s, 'body', 600, 20 * s, 4 * s, 'left', tw);
+    spaced(ctx, L, label, tx, iy - (two ? 20 : 8) * s, 'body', 600, 20 * s, 4 * s, 'left', tw);
     ctx.fillStyle = brand.colors.text;
     ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
-    ctx.font = font(L, 'body', 600, fitSize(ctx, L, value, 'body', 600, 30 * s, tw));
-    ctx.fillText(value, tx, iy + 30 * s);
+    ctx.font = font(L, 'body', 600, val.size);
+    val.lines.forEach((t, k) => ctx.fillText(t, tx, iy + (two ? 12 * s + k * val.size * 1.15 : 30 * s)));
   });
+}
+
+// One line at the full size if it fits; otherwise two balanced lines at up to 85% of it
+// (shrinking further only if a line is still too wide), unless one smaller line reads better.
+function valueLines(ctx, L, text, max, maxW) {
+  const one = fitSize(ctx, L, text, 'body', 600, max, maxW);
+  const words = text.split(/\s+/).filter(Boolean);
+  if (one >= max || words.length < 2) return { lines: [text], size: one };
+  ctx.font = font(L, 'body', 600, 100);
+  let best = null;
+  for (let i = 1; i < words.length; i++) {
+    const pair = [words.slice(0, i).join(' '), words.slice(i).join(' ')];
+    const wid = Math.max(...pair.map((t) => ctx.measureText(t).width));
+    if (!best || wid < best.wid) best = { lines: pair, wid };
+  }
+  const two = Math.min(max * 0.85, Math.floor(100 * maxW / best.wid));
+  return two > one ? { lines: best.lines, size: two } : { lines: [text], size: one };
 }
 
 function drawIcon(ctx, kind, x, y, r, s, color) {
@@ -780,19 +1045,28 @@ export async function loadLogo(url) {
   const blob = await res.blob();
   const img = await blobToImage(blob);
   const warnings = [];
-  const iw = img.naturalWidth, ih = img.naturalHeight;
+  const iw = img.naturalWidth;
   if (!/\.png$/i.test(url) || blob.type !== 'image/png') warnings.push(`${url} is not a PNG. Use a PNG with a transparent background.`);
   if (iw < 600) warnings.push(`${url} is only ${iw}px wide. Use one at least 1000px wide so it looks crisp.`);
+  const logo = trimLogo(img);
+  if (logo.opaque) warnings.push(`${url} doesn't seem to have a transparent background.`);
+  return { ...logo, warnings };
+}
 
+// A logo picked from the device (e.g. another team's), trimmed the same way.
+export async function logoFromFile(file) {
+  return trimLogo(await blobToImage(file));
+}
+
+function trimLogo(img) {
+  const iw = img.naturalWidth, ih = img.naturalHeight;
   const c = document.createElement('canvas');
   c.width = iw; c.height = ih;
   const ctx = c.getContext('2d', { willReadFrequently: true });
   ctx.drawImage(img, 0, 0);
   const { data } = ctx.getImageData(0, 0, iw, ih);
   const alpha = (x, y) => data[(y * iw + x) * 4 + 3];
-  if ([alpha(0, 0), alpha(iw - 1, 0), alpha(0, ih - 1), alpha(iw - 1, ih - 1)].every((v) => v === 255)) {
-    warnings.push(`${url} doesn't seem to have a transparent background.`);
-  }
+  const opaque = [alpha(0, 0), alpha(iw - 1, 0), alpha(0, ih - 1), alpha(iw - 1, ih - 1)].every((v) => v === 255);
   let x0 = iw, y0 = ih, x1 = -1, y1 = -1;
   for (let y = 0; y < ih; y++) {
     for (let x = 0; x < iw; x++) {
@@ -811,7 +1085,7 @@ export async function loadLogo(url) {
   octx.imageSmoothingQuality = 'high';
   octx.drawImage(c, x0, y0, tw, th, 0, 0, out.width, out.height);
   c.width = c.height = 0;
-  return { img: out, w: out.width, h: out.height, warnings };
+  return { img: out, w: out.width, h: out.height, opaque };
 }
 
 export function blobToImage(blob) {

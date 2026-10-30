@@ -28,7 +28,16 @@
     "thankYouMessage": "Your support helps get our team on the road | to new opportunities, growth | and amazing experiences.",
     "tournamentRibbon": "FINAL STANDING",
     "livestream": "WATCH THE STREAM",
-    "livestreamNote": "(venue signal strength permitting)"
+    "livestreamNote": "(venue signal strength permitting)",
+    "tournamentStream": "WATCH LIVE ON YOUTUBE",
+    "tournamentStreamNote": "(signal strength permitting)"
+  },
+
+  "tournamentBackdrop": {
+    "logo": "logos/fc-logo.png",
+    "overlay": "#0A0A0A",
+    "overlayStrength": 0.7,
+    "size": 0.5
   },
 
   "headlines": {
@@ -38,6 +47,7 @@
     "meet-team": "MEET THE COACHES",
     "next-game": "NEXT GAME",
     "tournament": "TOURNAMENT RESULT",
+    "tournament-preview": "UPCOMING TOURNAMENT",
     "thank-you": "THANK | YOU"
   },
 
@@ -65,6 +75,10 @@
     "tournament": [
       "[Headline]: [Placing]! Record [Record]. So proud of this team. Thanks to [Sponsor] for the support. [Hashtags] #[Sport]",
       "What a weekend at [Headline]. [Placing] finish! [Hashtags]"
+    ],
+    "tournament-preview": [
+      "Tournament time! We're heading to [Headline] on [Date] at [Time], [Venue]. Come cheer us on! Can't make it? Watch live on YouTube (signal strength permitting)! Thanks to [Sponsor] for the support. [Hashtags] #[Sport]",
+      "Next stop: [Headline]. [Date] · [Time] · [Venue]. Watch live on YouTube (signal strength permitting). Let's go TEAK! [Hashtags]"
     ],
     "thank-you": [
       "A huge thank you to [Sponsor], our [Tier] sponsor, for supporting TEAK 16U this season! [Hashtags] #[Sport]",

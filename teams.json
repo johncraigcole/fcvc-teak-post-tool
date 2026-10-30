@@ -1,0 +1,10 @@
+[
+  {"name": "Chatham Ballhawks Breakout", "club": "Chatham Ballhawks", "team": "Breakout", "logo": "logos/teams/chatham-ballhawks-breakout.png", "active": true},
+  {"name": "Jr Gryphons Chaos", "club": "Jr Gryphons", "team": "Chaos", "logo": "logos/teams/jr-gryphons-chaos.png", "active": true},
+  {"name": "London Fire Vortex", "club": "London Fire", "team": "Vortex", "logo": "logos/teams/london-fire-vortex.png", "active": true},
+  {"name": "MAC Nickel", "club": "MAC", "team": "Nickel", "logo": "logos/teams/mac-nickel.png", "active": true},
+  {"name": "Milton Edge Knights", "club": "Milton Edge", "team": "Knights", "logo": "logos/teams/milton-edge-knights.png", "active": true},
+  {"name": "Reach Genesis", "club": "Reach", "team": "Genesis", "logo": "logos/teams/reach-genesis.png", "active": true},
+  {"name": "Sky Volley PJ", "club": "Sky Volley", "team": "PJ", "logo": "logos/teams/sky-volley-pj.png", "active": true},
+  {"name": "St. Thomas Express Ignite", "club": "St. Thomas Express", "team": "Ignite", "logo": "logos/teams/st-thomas-express-ignite.png", "active": true}
+]
