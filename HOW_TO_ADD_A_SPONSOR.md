@@ -57,7 +57,7 @@ They disappear from the dropdown but stay in the file.
 
 ## Logos on the black background
 
-On the **Sponsor Thank-You** post, the logo sits in a gold-framed box that is **transparent by default**, so the logo sits straight on the black. (On other posts the "Presented by" logo box is white.) A logo with **dark lettering** will be hard to read on black, so:
+On the **Sponsor Thank-You** post, the logo sits in a gold-framed box that is **transparent by default**, so the logo sits straight on the black. (On other posts the "Presenting sponsor" logo box is white.) A logo with **dark lettering** will be hard to read on black, so:
 
 - **Per post:** volunteers can pick the box colour in the app. Under Details, **Logo box background** offers Transparent, White, Black, Club green, Club gold or any **Custom colour**.
 - **Per sponsor (recommended):** set the colour that suits each logo once, with `"background"`, and the app uses it automatically. Use `"transparent"` or a colour code like `"#FFFFFF"` (white):
@@ -68,7 +68,7 @@ On the **Sponsor Thank-You** post, the logo sits in a gold-framed box that is **
 
 - **Best of all:** ask the sponsor for a **white / light version** of their logo (most companies have a "reversed" logo for dark backgrounds). It then looks great on the transparent box.
 
-If a logo is **white or very light**, also add `"plate": "dark"` so the white "Presented by" boxes on other posts turn dark and the logo stays visible there.
+If a logo is **white or very light**, also add `"plate": "dark"` so the white "Presenting sponsor" boxes on other posts turn dark and the logo stays visible there.
 
 ## Replacing a sponsor's logo
 

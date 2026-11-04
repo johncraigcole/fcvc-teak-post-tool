@@ -17,17 +17,17 @@ Turns game photos into consistently branded Instagram and Facebook images, with 
 
    | Template | What it shows | Photos |
    |---|---|---|
-   | **Game Day Result** | Score ribbons (TEAK vs opponent), date, "Presented by [sponsor]" | 1 per post |
+   | **Game Day Result** | Score ribbons (TEAK vs opponent), date, "Presenting sponsor [logo]" | 1 per post |
    | **Player / Moment Highlight** | Your headline (e.g. "Big save!") over a big photo | 1 per post |
    | **Photo Collage** | 2–4 photos in one post. Portrait and landscape can mix | 2–4 per post |
    | **Meet the Team / Coaches** | Photo with up to 3 name ribbons (role + name) | 1 per post |
-   | **Next Game** | "NEXT GAME" with an optional context line under it (e.g. "Gold Medal Game", "In Pool Play"), "VS opponent", date, time and venue, plus an optional "LIVE — watch the stream" banner for streamed games. Without a photo it shows poster-style artwork of a volleyball flying over the net and smashing through the club badge | optional |
+   | **Game Time** | Laid out like Upcoming Tournament: "GAME TIME" with an optional context line under it (e.g. "Gold Medal Game", "In Pool Play"), our badge vs the opponent's logo on the framed green panel, and the start time. Typing a saved team as the opponent uses its logo automatically (or pick a logo from the device); with no logo, the circle shows the opponent's name. Every game is streamed: a "WATCH LIVE" bar sits at the bottom, under the presenting sponsor. On the Feed it reads "WATCH LIVE \| www.youtube.com/@FCVCTEAK"; on the Story it's a taller, empty bar sized for an Instagram link sticker to sit inside | none |
    | **Tournament Result** | Event name, finish ribbon (gold/silver/bronze colours) and record | 1 per post |
-   | **Upcoming Tournament** | Tournament name as the headline, our badge large on the left, a gold "VS", and up to 8 other teams' logos in gold-ringed circles (tapped from the shared **Saved teams** list, see [HOW_TO_ADD_A_TEAM.md](HOW_TO_ADD_A_TEAM.md), or picked from the device; empty slots show "TBA" until any are added), plus date, time and location, an optional **pool play** schedule (up to 4 games: approximate start time and opponent, picked from Saved teams) shown beside the stream box, and the Next Game streaming banner without its gold "LIVE" tag (always shown; wording from `config.json` → `labels` → `tournamentStream` and `tournamentStreamNote`). The circles are white by default; pick transparent, black or club green for logos that need it | none |
+   | **Upcoming Tournament** | Tournament name as the headline, our badge large on the left, a gold "VS", and up to 8 other teams' logos in gold-ringed circles (tapped from the shared **Saved teams** list, see [HOW_TO_ADD_A_TEAM.md](HOW_TO_ADD_A_TEAM.md), or picked from the device; empty slots show "TBA" until any are added), plus date, time and location, an optional **pool play** schedule (up to 4 games: approximate start time and opponent, picked from Saved teams) shown beside the stream box, and the Game Time streaming banner without its gold "LIVE" tag (always shown; wording from `config.json` → `labels` → `tournamentStream` and `livestreamNote`). The circles are white by default; pick transparent, black or club green for logos that need it | none |
    | **Sponsor Thank-You** | Laid out like the club's sponsor post: "THANK YOU", "For supporting our TEAK 16U team", tier ribbon (e.g. "SILVER SPONSOR"), a gold-framed logo box (transparent by default; volunteers can pick white, black, club colours or any custom colour, and each sponsor can set its own default; see [logos on black](HOW_TO_ADD_A_SPONSOR.md#logos-on-the-black-background)) and thank-you message. Every line can be reworded per post; blank boxes use the defaults from `config.json`. With no sponsor, a general thank-you | none |
 
 3. **Add photos.** Pick one, or several from the same game (batch mode).
-4. **Pick the sponsor, or "No sponsor"** (always allowed, on every template), and fill in the details. With no sponsor the "Presented by" row is left out, the photo gets the extra room, captions drop their sponsor sentence, and nothing goes in the sponsor log. Headlines are optional; each template has a default (e.g. "Meet the coaches"). Long headlines split over two lines automatically. To choose where it splits, type a `|`, e.g. `Meet the|Team`.
+4. **Pick the sponsor, or "No sponsor"** (always allowed, on every template), and fill in the details. With no sponsor the "Presenting sponsor" row is left out, the photo gets the extra room, captions drop their sponsor sentence, and nothing goes in the sponsor log. Headlines are optional; each template has a default (e.g. "Meet the coaches"). Long headlines split over two lines automatically. To choose where it splits, type a `|`, e.g. `Meet the|Team`.
 5. **Adjust the crop** in the preview: drag to move, pinch (or use the slider) to zoom. Switch between **Feed / Story** at the top; each size has its own crop. In Story, the pink bands show where Instagram puts its own buttons. They aren't in the final image.
    - **Show whole photo (no cropping)** fits the entire photo in the window over a blurred copy of itself. It's useful for a landscape shot in a tall post.
 6. With several photos, tap a thumbnail to adjust each one's crop. In a collage, tap a photo in the preview to select it. Template, sponsor and details apply to all of them.
@@ -64,7 +64,7 @@ Everything is changed through the GitHub website. Changes are live a minute or t
 | Club name, colours, fonts, hashtags, sport | `config.json` |
 | **Season** ("2026 – 2027") and the small top line ("FCVC · TEAK 16U") | `config.json` → `labels` → `season` / `eyebrow` |
 | Default headlines ("FINAL SCORE", "MEET THE COACHES"…) | `config.json` → `headlines` |
-| Other wording on the images ("PRESENTED BY", the thank-you message…) | `config.json` → `labels` |
+| Other wording on the images ("PRESENTING SPONSOR", the thank-you message…) | `config.json` → `labels` |
 | Caption wording | `config.json` → `captions` |
 | Club logo | replace `logos/club-logo.png` (same file name) |
 | Watermark logo behind the Upcoming Tournament matchup, and the colour laid over it | `config.json` → `tournamentBackdrop` (`logo`, `overlay` colour, `overlayStrength` from 0 = full colour logo to 1 = solid overlay colour, `size` as a share of the block height (0.5 = half, up to 300px); it sits behind the VS, and the club badge shrinks to make room; remove the block to turn it off) |
@@ -98,13 +98,14 @@ Everything is changed through the GitHub website. Changes are live a minute or t
   "labels": {
     "eyebrow": "FCVC · TEAK 16U",   // small gold line above every headline
     "season": "2026 – 2027",        // footer of every post
-    "presentedBy": "PRESENTED BY",
+    "presentedBy": "PRESENTING SPONSOR",
     "supportLine": "FOR SUPPORTING OUR TEAK 16U TEAM",
     "sponsorWord": "SPONSOR",       // under the tier on the thank-you ribbon
     "thankYouMessage": "Your support helps get our team on the road | to new opportunities, growth | and amazing experiences.",  // | = line break
     "tournamentRibbon": "FINAL STANDING",  // used when no dates & location are entered
-    "livestream": "WATCH THE STREAM",  // Next Game streaming banner (volunteers can reword per post, e.g. to name the platform)
-    "livestreamNote": "(venue signal strength permitting)"  // small line always shown under it (remove to hide)
+    "nextGameStream": "WATCH LIVE",   // Game Time stream bar on Feed posts, followed by youtubeUrl
+    "youtubeUrl": "www.youtube.com/@FCVCTEAK",  // the channel; also used in Game Time captions
+    "livestreamNote": "(signal strength permitting)"  // added after the stream link in Game Time captions, and under the Upcoming Tournament stream wording
   },
 
   "headlines": { "game-day": "FINAL SCORE", "meet-team": "MEET THE COACHES", "…": "…" },
@@ -116,9 +117,9 @@ Everything is changed through the GitHub website. Changes are live a minute or t
 }
 ```
 
-Template keys: `game-day`, `highlight`, `collage`, `meet-team`, `next-game`, `tournament`, `thank-you`.
+Template keys: `game-day`, `highlight`, `collage`, `meet-team`, `next-game` (Game Time), `tournament`, `tournament-preview`, `thank-you`.
 
-**Caption placeholders:** `[Stream]` (Next Game: "Can't make it? Watch the stream (venue signal strength permitting)!" when streaming is ticked, otherwise nothing) `[Opponent]` `[Score]` `[Sponsor]` `[Tier]` `[Date]` `[Time]` `[Venue]` `[Headline]` `[Placing]` `[Record]` `[Club]` `[Hashtags]` `[ClubHashtag]` `[Sport]`. Add as many caption options per template as you like. Volunteers choose from a dropdown. A placeholder whose detail is blank stays visible as e.g. `[Opponent]`, so volunteers can see what's missing.
+**Caption placeholders:** `[Stream]` (Game Time: "Can't make it? Watch live at www.youtube.com/@FCVCTEAK (signal strength permitting)!" always added) `[Opponent]` `[Score]` `[Sponsor]` `[Tier]` `[Date]` `[Time]` `[Venue]` `[Headline]` `[Placing]` `[Record]` `[Club]` `[Hashtags]` `[ClubHashtag]` `[Sport]`. Add as many caption options per template as you like. Volunteers choose from a dropdown. A placeholder whose detail is blank stays visible as e.g. `[Opponent]`, so volunteers can see what's missing.
 
 **Using the club's own font files** instead of Google Fonts: upload them to `fonts/`, remove `googleFontsUrl`, and add:
 
@@ -180,7 +181,7 @@ index.html            page layout
 css/app.css           styles
 js/app.js             UI, photos, crops, saving, captions, sponsor log
 js/render.js          output sizes, templates and all drawing (positions live here)
-js/hero.js            the Next Game artwork (drawn in code, no images needed)
+js/hero.js            the old Next Game artwork (drawn in code; no longer used by any template)
 js/zip.js             tiny ZIP writer for "Download ZIP"
 config.json           branding, captions, labels
 sponsors.json         sponsor list

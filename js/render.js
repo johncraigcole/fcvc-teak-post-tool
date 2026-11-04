@@ -14,9 +14,10 @@ export const FORMATS = {
 import { drawHero } from './hero.js';
 
 export const MAX_ZOOM = 5;
-const SPONSOR_ROW = 100;   // height of the "PRESENTED BY [logo]" row
+const SPONSOR_ROW = 100;   // height of the "PRESENTING SPONSOR [logo]" row
 const RIBBON = 150;        // height of name/score ribbons
-const STREAM_ROW = 104;    // height of the Next Game "LIVE" banner
+const STREAM_ROW = 104;    // height of the stream banners
+const STICKER_ROW = 180;   // Story stream bar: tall enough to hold an Instagram link sticker
 const LINE = 50;           // a single line of text in place of the sponsor row
 
 // ---------- Templates ----------
@@ -82,31 +83,33 @@ export const TEMPLATES = {
     },
   },
 
-  'next-game': {
-    name: 'Next Game',
-    desc: 'Upcoming match: opponent, date, time, venue',
-    photos: 'optional', hero: true,   // ball-smashes-badge artwork when there's no photo
-    oneLine: true,                    // "NEXT GAME" on one line, with the context line under it
-    fields: ['context', 'opponent', 'date', 'time', 'venue', 'stream'],
-    info: (d) => 90 + 20 + 110 + (d.stream ? 26 + STREAM_ROW : 0) + (d.hasSponsor ? 26 + SPONSOR_ROW : 0),
+  'next-game': {                     // shown as "Game Time" (the id stays for saved settings and captions)
+    name: 'Game Time',
+    desc: 'Our badge vs the opponent, start time, stream link',
+    photos: 'none', noBadge: true,   // laid out like Upcoming Tournament: text-only header
+    oneLine: true,                   // "GAME TIME" on one line, with the context line under it
+    fields: ['context', 'opponent', 'oppLogo', 'time'],
+    // Our badge vs the opponent's logo on the framed green panel, the start time under it.
+    // Every game is streamed: a stream bar at the bottom, under the sponsor. The Feed shows
+    // "WATCH LIVE | channel address"; on the Story the bar is taller and empty, ready for an
+    // Instagram link sticker (which says WATCH LIVE itself) to sit inside it.
     draw(ctx, L, o, box) {
-      const { s } = L, d = o.data;
-      const vs = `VS ${(d.opponent || 'OPPONENT').toUpperCase()}`;
-      ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
-      ctx.font = font(L, 'display', 700, fitSize(ctx, L, vs, 'display', 700, 76 * s, box.w));
-      ctx.fillStyle = L.brand.colors.text;
-      ctx.fillText(vs, L.W / 2, box.y + 70 * s);
-      iconRow(ctx, L, box.x, box.y + 110 * s, box.w, 110 * s, [
-        ['calendar', 'DATE', d.dateShort || 'TBC'],
-        ['clock', 'TIME', d.timeLabel || 'TBC'],
-        ['pin', 'VENUE', d.venue || 'TBC'],
-      ]);
-      let y = box.y + (90 + 20 + 110) * s;
-      if (d.stream) {
-        streamRow(ctx, L, y + 26 * s, Math.min(box.w, 860 * s), d.stream, L.brand.labels.livestreamNote);
-        y += (26 + STREAM_ROW) * s;
-      }
-      sponsorRow(ctx, L, o, y + 26 * s);
+      const { s, brand } = L, d = o.data;
+      const story = L.fmt === 'story', barH = (story ? STICKER_ROW : STREAM_ROW) * s;
+      const gap = 46 * s;   // space between the time, the sponsor and the stream bar
+      const infoH = 110 * s, linkH = gap + barH, spH = d.hasSponsor ? gap + SPONSOR_ROW * s : 0;
+      const area = { x: box.x, y: box.y, w: box.w, h: box.h - infoH - linkH - spH - 30 * s };
+      const pad = 34 * s;
+      framedPanel(ctx, L, area);
+      matchup(ctx, L, o, { x: area.x + pad, y: area.y + pad, w: area.w - 2 * pad, h: area.h - 2 * pad },
+        [o.assets.opponent || null], d.opponent);
+      let y = area.y + area.h + 30 * s;
+      iconRow(ctx, L, box.x, y, box.w, infoH, [['clock', 'TIME', d.timeLabel || 'TBC']], true);
+      y += infoH;
+      sponsorRow(ctx, L, o, y + gap);
+      y += spH;
+      if (story) linkRow(ctx, L, y + gap, Math.min(box.w, 860 * s), '', '', barH);
+      else linkRow(ctx, L, y + gap, Math.min(box.w, 860 * s), brand.labels.nextGameStream || 'WATCH LIVE', brand.labels.youtubeUrl || '');
     },
   },
 
@@ -133,7 +136,7 @@ export const TEMPLATES = {
     headline: { label: 'Tournament name', placeholder: 'e.g. Ontario Cup', below: true },
     fields: ['headline', 'teams', 'date', 'time', 'venue', 'pool'],
     // Our badge, a gold VS and the other teams' logos, with date / time / location under them
-    // and the Next Game stream banner (always shown: every tournament is streamed on YouTube).
+    // and the Game Time stream banner (always shown: every tournament is streamed on YouTube).
     // With pool play games entered, the schedule and a stream box sit side by side instead.
     draw(ctx, L, o, box) {
       const { s, brand } = L, d = o.data;
@@ -143,7 +146,8 @@ export const TEMPLATES = {
       // Same gold-framed green panel as an empty photo window, without the faint badge
       const pad = 34 * s;
       framedPanel(ctx, L, area);
-      matchup(ctx, L, o, { x: area.x + pad, y: area.y + pad, w: area.w - 2 * pad, h: area.h - 2 * pad });
+      matchup(ctx, L, o, { x: area.x + pad, y: area.y + pad, w: area.w - 2 * pad, h: area.h - 2 * pad },
+        o.assets.teams?.length ? o.assets.teams : Array(8).fill(null));
       const y = area.y + area.h + 30 * s;
       iconRow(ctx, L, box.x, y, box.w, infoH, [
         ['calendar', 'DATE', d.dateShort || 'TBC'],
@@ -151,7 +155,7 @@ export const TEMPLATES = {
         ['pin', 'LOCATION', d.venue || 'TBC'],
       ], true);
       const streamText = brand.labels.tournamentStream || 'WATCH LIVE ON YOUTUBE';
-      const streamNote = brand.labels.tournamentStreamNote ?? brand.labels.livestreamNote;
+      const streamNote = brand.labels.livestreamNote;
       if (poolH) {
         const gap = 24 * s, pw = (box.w - gap) * 0.6, sy = y + infoH + 26 * s;
         poolTable(ctx, L, box.x, sy, pw, poolH, d.pool);
@@ -251,30 +255,39 @@ function thanksPanel(ctx, L, box, d) {
 
 // Club badge on the left, a gold VS, and the other teams' logos in circles on the right
 // (two columns when there are more than four). With no logos added, eight "TBA" circles.
-function matchup(ctx, L, o, r) {
+// teams: logos (null = empty circle). label: a single opponent's name, written inside an empty
+// circle, or under the circle when there's a logo.
+function matchup(ctx, L, o, r, teams, label = '') {
   const { s, brand } = L;
-  const teams = o.assets.teams?.length ? o.assets.teams : Array(8).fill(null);
+  const named = teams.length === 1 && !!label;
   // With a backdrop logo the middle column widens to hold it, and the badge and team circles
   // get smaller to make room (the badge stays well over twice the size of a circle)
   const bd = o.assets.backdrop, opt = brand.tournamentBackdrop || {};
   const n = teams.length, g = 20 * s;
   const bdSize = bd ? Math.min(r.h * (opt.size ?? 0.5), 300 * s) : 0;
   const vsW = Math.max(150 * s, bdSize + 30 * s);
-  // Tall grid (2 columns) or wide grid (4 columns), whichever gives bigger circles in this space
+  // VS sits in the middle of the panel; the badge is centred in the left half and the
+  // opponents in the right half
+  const half = (r.w - vsW) / 2;
+  const club = Math.min(r.h, (bd ? 360 : 480) * s, half);
+  // Tall grid (2 columns) or wide grid (4 columns), whichever gives bigger circles in this space.
+  // The badge stays well over twice the size of a circle (1.4x for a single opponent).
   const layout = (cols) => {
     const rows = Math.ceil(n / cols);
-    const tile = Math.min((bd ? 135 : 170) * s, (r.h - g * (rows - 1)) / rows, (r.w - vsW - g * (cols - 1)) / (cols + 2.2));
+    const cap = n === 1 ? 220 : bd ? 135 : 170;   // a single opponent gets a bigger circle
+    const tile = Math.min(cap * s, (r.h - g * (rows - 1) - (named ? 60 * s : 0)) / rows,
+      (half - g * (cols - 1)) / cols, club / (n === 1 ? 1.4 : 2.2));
     return { cols, rows, tile };
   };
   const { cols, rows, tile } = [n > 4 ? 2 : 1, n > 4 ? 4 : n].map(layout).reduce((a, b) => (b.tile > a.tile + 1 ? b : a));
   const gridW = cols * tile + (cols - 1) * g, gridH = rows * tile + (rows - 1) * g;
-  const club = Math.min(r.h, (bd ? 360 : 480) * s, r.w - gridW - vsW);
-  const x0 = r.x + (r.w - club - vsW - gridW) / 2, cy = r.y + r.h / 2;
-  const vx = x0 + club + vsW / 2;
+  // A name under a single logo wraps onto two lines if it's much wider than the circle
+  const name = named && teams[0] ? valueLines(ctx, L, label.toUpperCase(), 26 * s, Math.min(half, Math.max(gridW, 240 * s))) : null;
+  const cy = r.y + r.h / 2, vx = r.x + r.w / 2;
   if (bd) backdrop(ctx, L, bd, vx, cy, bdSize, opt);
 
   // Badge on a soft green glow
-  const gx = x0 + club / 2;
+  const gx = r.x + half / 2;
   const glow = ctx.createRadialGradient(gx, cy, 0, gx, cy, club * 0.62);
   glow.addColorStop(0, rgba(brand.colors.primary, 0.75));
   glow.addColorStop(1, rgba(brand.colors.primary, 0));
@@ -295,14 +308,20 @@ function matchup(ctx, L, o, r) {
   ctx.fillText('VS', vx, cy + vsize * 0.36);
 
   // Team logos; a part-filled last row is centred under the others
-  const tx = x0 + club + vsW, ty = cy - gridH / 2;
+  const tx = r.x + r.w - half / 2 - gridW / 2, ty = cy - gridH / 2 - (name ? name.lines.length * 18 * s : 0);
   const lastRow = rows - 1, inLast = n - lastRow * cols;
   teams.forEach((a, i) => {
     const row = Math.floor(i / cols), col = i % cols;
     const shift = row === lastRow ? (cols - inLast) * (tile + g) / 2 : 0;
     const x = tx + shift + col * (tile + g);
-    teamCircle(ctx, L, a, x + tile / 2, ty + row * (tile + g) + tile / 2, tile / 2, a?.bg || o.data.teamBg);
+    teamCircle(ctx, L, a, x + tile / 2, ty + row * (tile + g) + tile / 2, tile / 2, a?.bg || o.data.teamBg, named ? label : '');
   });
+  if (name) {
+    ctx.fillStyle = brand.colors.text;
+    ctx.font = font(L, 'body', 600, name.size);
+    ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+    name.lines.forEach((t, k) => ctx.fillText(t, tx + gridW / 2, ty + tile + 44 * s + k * name.size * 1.2));
+  }
 }
 
 // A logo centred behind the VS, with a colour laid over just the logo so it reads as a
@@ -321,8 +340,9 @@ function backdrop(ctx, L, a, cx, cy, size, opt) {
   c.width = c.height = 0;
 }
 
-// One team logo in a gold-ringed circle, or a dashed "TBA" circle when there's no logo.
-function teamCircle(ctx, L, a, cx, cy, rad, bg) {
+// One team logo in a gold-ringed circle, or a dashed circle when there's no logo, holding the
+// team's name if given (else "TBA").
+function teamCircle(ctx, L, a, cx, cy, rad, bg, name = '') {
   const { s, brand } = L;
   ctx.save();
   ctx.beginPath();
@@ -335,7 +355,15 @@ function teamCircle(ctx, L, a, cx, cy, rad, bg) {
     ctx.lineWidth = 2.5 * s;
     ctx.stroke();
     ctx.fillStyle = brand.colors.accent;
-    spaced(ctx, L, 'TBA', cx, cy + 10 * s, 'body', 600, Math.min(28 * s, rad * 0.4), 4 * s, 'center');
+    if (name) {
+      const val = valueLines(ctx, L, name.toUpperCase(), Math.min(34 * s, rad * 0.3), rad * 1.5);
+      ctx.font = font(L, 'body', 600, val.size);
+      ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+      const lh = val.size * 1.15, y0 = cy - (val.lines.length - 1) * lh / 2 + val.size * 0.36;
+      val.lines.forEach((t, k) => ctx.fillText(t, cx, y0 + k * lh));
+    } else {
+      spaced(ctx, L, 'TBA', cx, cy + 10 * s, 'body', 600, Math.min(28 * s, rad * 0.4), 4 * s, 'center');
+    }
     ctx.restore();
     return;
   }
@@ -354,7 +382,7 @@ function teamCircle(ctx, L, a, cx, cy, rad, bg) {
 // Default headline text per template (config.headlines overrides).
 const DEFAULT_HEADLINES = {
   'game-day': 'FINAL SCORE', 'highlight': 'GAME HIGHLIGHT', 'collage': 'GAME DAY', 'meet-team': 'MEET THE TEAM',
-  'next-game': 'NEXT GAME', 'tournament': 'TOURNAMENT RESULT', 'tournament-preview': 'UPCOMING TOURNAMENT',
+  'next-game': 'GAME TIME', 'tournament': 'TOURNAMENT RESULT', 'tournament-preview': 'UPCOMING TOURNAMENT',
   'thank-you': 'THANK YOU',
 };
 
@@ -366,7 +394,7 @@ export function drawPost(ctx, fmt, o) {
   const s = fmt.s, W = fmt.w, H = fmt.h;
   const T = Math.max(44 * s, fmt.safeTop + 20);
   const B = H - Math.max(36 * s, fmt.safeBottom + 10);
-  const L = { W, H, s, brand: o.brand, M: 50, T, B };
+  const L = { W, H, s, brand: o.brand, M: 50, T, B, fmt: fmt.id };
   const t = TEMPLATES[o.template];
   // Photo-led templates use a smaller header, info area and footer so the photo stands out.
   const Lh = t.compact ? { ...L, s: s * 0.72 } : L;   // header
@@ -458,8 +486,8 @@ function header(ctx, L, o, text) {
     let fsize = Math.min(124 * s, room / (CAP + GAP + SUB * CAP));
     fsize = fitSize(ctx, L, text, 'display', 700, fsize, colW);
     const ssize = fitSize(ctx, L, sub, 'display', 700, fsize * SUB, colW);
-    // A name under the headline (Upcoming Tournament) swaps the colours: gold headline, cream name
-    const y = top + fsize * CAP, below = t.headline?.below;
+    // Badge-less headers (Upcoming Tournament, Game Time) swap the colours: gold headline, cream line under it
+    const y = top + fsize * CAP, below = t.noBadge;
     ctx.font = font(L, 'display', 700, fsize);
     ctx.fillStyle = below ? brand.colors.accent : brand.colors.text;
     ctx.fillText(text, tx, y);
@@ -477,7 +505,7 @@ function header(ctx, L, o, text) {
   const lh = fsize * LH;
   let y = top + fsize * CAP;
   lines.forEach((line, i) => {
-    ctx.fillStyle = lines.length > 1 && i === 0 ? brand.colors.text : (lines.length > 1 || t.headline?.below ? brand.colors.accent : brand.colors.text);
+    ctx.fillStyle = lines.length > 1 && i === 0 ? brand.colors.text : (lines.length > 1 || t.noBadge ? brand.colors.accent : brand.colors.text);
     ctx.fillText(line, tx, y);
     y += lh;
   });
@@ -703,7 +731,7 @@ function ribbon(ctx, L, x, y, w, h, style, label, value, valueSize = 60, labelBe
   }
 }
 
-// "PRESENTED BY [logo box]", right-aligned when there's text on the left, else centred.
+// "PRESENTING SPONSOR [logo box]", right-aligned when there's text on the left, else centred.
 // With no sponsor, just the left text, centred on its own line.
 function sponsorRow(ctx, L, o, y, leftText = '') {
   const { s, brand } = L, h = SPONSOR_ROW * s;
@@ -713,7 +741,7 @@ function sponsorRow(ctx, L, o, y, leftText = '') {
     spaced(ctx, L, leftText.toUpperCase(), L.W / 2, y + LINE * s / 2 + 10 * s, 'body', 500, 28 * s, 3 * s, 'center', L.W - 2 * L.M);
     return;
   }
-  const label = brand.labels.presentedBy || 'PRESENTED BY';
+  const label = brand.labels.presentedBy || 'PRESENTING SPONSOR';
   const lsize = 24 * s, sp = 4 * s;
   ctx.font = font(L, 'body', 600, lsize);
   const lw = spacedWidth(ctx, label, sp);
@@ -732,7 +760,7 @@ function sponsorRow(ctx, L, o, y, leftText = '') {
 
 // White box with a gold double border holding the sponsor logo (or the name as text).
 // bg: the box colour ('transparent' lets the logo sit on the post's background). Without it,
-// "Presented by" boxes are white, or dark for sponsors set to "plate": "dark".
+// "Presenting sponsor" boxes are white, or dark for sponsors set to "plate": "dark".
 function logoBox(ctx, L, o, x, y, w, h, fill, bg) {
   const { s, brand } = L;
   bg ||= o.data.sponsorPlate === 'dark' ? '#151515' : brand.colors.secondary;
@@ -864,6 +892,42 @@ function greenBox(ctx, L, x, y, w, h) {
   ctx.strokeStyle = brand.colors.accent;
   ctx.lineWidth = 2.5 * s;
   ctx.stroke();
+}
+
+// Stream bar: gold "WATCH LIVE", then (if given) a gold divider and the channel address,
+// centred as one group in the green bar. With no label it's an empty bar (for a sticker).
+function linkRow(ctx, L, y, w, label, url, h = STREAM_ROW * L.s) {
+  const { s, brand } = L, x = L.W / 2 - w / 2;
+  ctx.save();
+  roundRect(ctx, x, y, w, h, Math.min(h / 2, 52 * s));
+  ctx.fillStyle = rgba(brand.colors.primary, 0.85);
+  ctx.fill();
+  ctx.strokeStyle = brand.colors.accent;
+  ctx.lineWidth = 2.5 * s;
+  ctx.stroke();
+  if (!label) return ctx.restore();
+  let lsize = 26 * s, lsp = 5 * s, usize = 28 * s;
+  const gap = 26 * s, room = w - 70 * s;
+  ctx.font = font(L, 'body', 600, lsize);
+  let lw = spacedWidth(ctx, label.toUpperCase(), lsp);
+  ctx.font = font(L, 'body', 500, usize);
+  let uw = url ? ctx.measureText(url).width : 0;
+  const total = lw + (url ? gap * 2 + 2 * s + uw : 0), k = Math.min(1, room / total);
+  lsize *= k; lsp *= k; usize *= k; lw *= k; uw *= k;
+  let gx = L.W / 2 - total * k / 2;
+  const base = y + h / 2 + 9 * s * k;
+  ctx.fillStyle = brand.colors.accent;
+  spaced(ctx, L, label.toUpperCase(), gx, base, 'body', 600, lsize, lsp, 'left');
+  if (url) {
+    gx += lw + gap * k;
+    ctx.fillRect(gx, y + h * 0.3, 2 * s, h * 0.4);
+    gx += 2 * s + gap * k;
+    ctx.fillStyle = brand.colors.text;
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.font = font(L, 'body', 500, usize);
+    ctx.fillText(url, gx, base);
+  }
+  ctx.restore();
 }
 
 // Three columns of [icon] LABEL / value, separated by thin gold rules. A value too long for

@@ -124,8 +124,16 @@
             <input type="time" id="f-time">
           </label>
           <label data-field="opponent">Opponent <span class="opt" data-opt-for="highlight collage">(optional)</span>
-            <input type="text" id="f-opponent" placeholder="e.g. Riverside" autocomplete="off" maxlength="40">
+            <input type="text" id="f-opponent" placeholder="e.g. Riverside" autocomplete="off" maxlength="40" list="teamNames">
+            <datalist id="teamNames"></datalist>
           </label>
+          <div data-field="oppLogo" class="opp-logo">
+            <div class="team-slot" id="oppSlot">
+              <label class="team-pick" aria-label="Opponent logo"><input type="file" id="oppFile" accept="image/*"><span class="num">+</span></label>
+              <button type="button" class="thumb-remove" id="oppRemove" aria-label="Remove opponent logo" hidden>×</button>
+            </div>
+            <p class="muted small" id="oppHint"></p>
+          </div>
           <label data-field="venue"><span id="venueLabel">Venue</span>
             <input type="text" id="f-venue" placeholder="e.g. Western Rec Centre" autocomplete="off" maxlength="40">
           </label>
@@ -135,10 +143,6 @@
             <div class="game"><input type="time" id="f-g2Time" aria-label="Game 2 time"><select id="f-g2Team" aria-label="Game 2 opponent"></select></div>
             <div class="game"><input type="time" id="f-g3Time" aria-label="Game 3 time"><select id="f-g3Team" aria-label="Game 3 opponent"></select></div>
             <div class="game"><input type="time" id="f-g4Time" aria-label="Game 4 time"><select id="f-g4Team" aria-label="Game 4 opponent"></select></div>
-          </div>
-          <div data-field="stream" class="stream">
-            <label class="check"><input type="checkbox" id="f-stream"> Streaming this game</label>
-            <input type="text" id="f-streamText" autocomplete="off" maxlength="40" aria-label="Stream wording" hidden>
           </div>
           <div data-field="score" class="score-row">
             <label>Our score <input type="text" id="f-ourScore" inputmode="numeric" maxlength="3" placeholder="3"></label>

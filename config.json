@@ -22,15 +22,15 @@
   "labels": {
     "eyebrow": "FCVC · TEAK 16U",
     "season": "2026 – 2027",
-    "presentedBy": "PRESENTED BY",
+    "presentedBy": "PRESENTING SPONSOR",
     "supportLine": "FOR SUPPORTING OUR TEAK 16U TEAM",
     "sponsorWord": "SPONSOR",
     "thankYouMessage": "Your support helps get our team on the road | to new opportunities, growth | and amazing experiences.",
     "tournamentRibbon": "FINAL STANDING",
-    "livestream": "WATCH THE STREAM",
-    "livestreamNote": "(venue signal strength permitting)",
-    "tournamentStream": "WATCH LIVE ON YOUTUBE",
-    "tournamentStreamNote": "(signal strength permitting)"
+    "nextGameStream": "WATCH LIVE",
+    "youtubeUrl": "www.youtube.com/@FCVCTEAK",
+    "livestreamNote": "(signal strength permitting)",
+    "tournamentStream": "WATCH LIVE ON YOUTUBE"
   },
 
   "tournamentBackdrop": {
@@ -45,7 +45,7 @@
     "highlight": "GAME HIGHLIGHT",
     "collage": "GAME DAY",
     "meet-team": "MEET THE COACHES",
-    "next-game": "NEXT GAME",
+    "next-game": "GAME TIME",
     "tournament": "TOURNAMENT RESULT",
     "tournament-preview": "UPCOMING TOURNAMENT",
     "thank-you": "THANK | YOU"
@@ -54,7 +54,7 @@
   "captions": {
     "game-day": [
       "Great effort today vs [Opponent]! Final: [Score]. Thanks to [Sponsor] for supporting our club. [Hashtags] #[Sport]",
-      "Full time: [Club] [Score] [Opponent]. Proud of the whole team! Presented by [Sponsor]. [Hashtags]"
+      "Full time: [Club] [Score] [Opponent]. Proud of the whole team! Presenting sponsor: [Sponsor]. [Hashtags]"
     ],
     "highlight": [
       "[Headline] What a moment vs [Opponent]! Thanks to [Sponsor] for backing our club. [Hashtags] #[Sport]",
@@ -69,8 +69,8 @@
       "Say hello to the people behind TEAK 16U. [Hashtags]"
     ],
     "next-game": [
-      "Next up: [Opponent] on [Date] at [Time], [Venue]. Come cheer us on! [Stream] Presented by [Sponsor]. [Hashtags] #[Sport]",
-      "Game day is coming! TEAK vs [Opponent], [Date] · [Time] · [Venue]. [Stream] [Hashtags]"
+      "Next up: [Opponent] at [Time]. Come cheer us on! [Stream] Presenting sponsor: [Sponsor]. [Hashtags] #[Sport]",
+      "Game day is coming! TEAK vs [Opponent] at [Time]. [Stream] [Hashtags]"
     ],
     "tournament": [
       "[Headline]: [Placing]! Record [Record]. So proud of this team. Thanks to [Sponsor] for the support. [Hashtags] #[Sport]",

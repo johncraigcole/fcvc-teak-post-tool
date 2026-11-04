@@ -11,7 +11,7 @@ const MAX_PHOTO_SIDE = 2560;   // photos are downscaled to this on load to keep 
 const JPG_QUALITY = 0.92;
 
 const FIELD_IDS = ['date', 'time', 'opponent', 'venue', 'ourScore', 'theirScore', 'headline', 'subtext', 'placing', 'record',
-  'p1Role', 'p1Name', 'p2Role', 'p2Name', 'p3Role', 'p3Name', 'collageCount', 'stream', 'streamText', 'context',
+  'p1Role', 'p1Name', 'p2Role', 'p2Name', 'p3Role', 'p3Name', 'collageCount', 'context',
   'eyebrow', 'tySupport', 'tyTier', 'tyWord', 'tyMessage', 'season', 'logoBg', 'logoBgCustom', 'teamBg',
   'g1Time', 'g1Team', 'g2Time', 'g2Team', 'g3Time', 'g3Team', 'g4Time', 'g4Team'];
 const TEAM_SLOTS = 8;
@@ -20,7 +20,9 @@ let config, sponsors = [], teamList = [];
 const assets = { club: null, sponsors: new Map(), overlays: {} };
 const state = {
   photos: [],          // { id, name, img, thumb, fit, crops: { [key]: crop } }
-  teams: Array(TEAM_SLOTS).fill(null),   // other teams' logos for Upcoming Tournament: { asset, thumb, name, bg }
+  teams: Array(TEAM_SLOTS).fill(null),
+  oppUpload: null,     // Game Time opponent logo picked from the device: { asset, thumb }
+  oppSaved: null,      // ...or the saved team's logo matching the opponent's name: { asset, thumb, bg, name }   // other teams' logos for Upcoming Tournament: { asset, thumb, name, bg }
   sel: 0,
   format: 'feed',
   template: 'game-day',
@@ -62,6 +64,7 @@ async function init() {
   buildSponsorSelect();
   bindFields();
   bindTeams();
+  bindOpponent();
   bindPreview();
   bindPhotos();
   bindOutputs();
@@ -319,7 +322,7 @@ function bindFields() {
   // Pool play opponents come from the saved team list
   const teamOpts = '<option value="">Opponent…</option>' + teamList.map((t) => `<option value="${esc(t.name)}">${esc(t.name)}</option>`).join('');
   [1, 2, 3, 4].forEach((i) => { $(`#f-g${i}Team`).innerHTML = teamOpts; });
-  $('#f-streamText').placeholder = `Wording (default: ${config.labels?.livestream || 'WATCH THE STREAM'})`;
+  $('#teamNames').innerHTML = teamList.map((t) => `<option value="${esc(t.name)}">`).join('');
   // Sponsor Thank-You text boxes show the default wording they'll use if left blank
   const lb = config.labels || {};
   $('#f-eyebrow').placeholder = lb.eyebrow || '';
@@ -331,10 +334,9 @@ function bindFields() {
   for (const id of FIELD_IDS) {
     const el = $(`#f-${id}`);
     if (el.type === 'checkbox') {
-      // Checkbox fields hold 'yes' or ''. The livestream wording box only shows when ticked.
+      // Checkbox fields hold 'yes' or ''.
       el.addEventListener('change', () => {
         state.fields[id] = el.checked ? 'yes' : '';
-        if (id === 'stream') $('#f-streamText').hidden = !el.checked;
         updateCaption();
         render();
       });
@@ -392,7 +394,7 @@ function bindTeams() {
 }
 
 function renderTeams() {
-  document.querySelectorAll('.team-slot').forEach((slot, i) => {
+  document.querySelectorAll('#teamSlots .team-slot').forEach((slot, i) => {
     const t = state.teams[i];
     slot.querySelector('.team-pick').style.backgroundImage = t ? `url(${t.thumb})` : '';
     slot.querySelector('.team-pick').title = t?.name || '';
@@ -437,6 +439,54 @@ function buildTeamLibrary() {
   });
 }
 
+// Game Time: the opponent's logo. Typing a saved team's name uses its logo automatically;
+// tapping the circle uses a logo from the device instead.
+function bindOpponent() {
+  $('#f-opponent').addEventListener('input', matchOpponent);
+  $('#oppFile').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    try {
+      const asset = await logoFromFile(file);
+      state.oppUpload = { asset, thumb: asset.img.toDataURL('image/png') };
+    } catch {
+      toast("That logo couldn't be opened. Try PNG or JPG.");
+    }
+    renderOpponent();
+  });
+  $('#oppRemove').onclick = () => { state.oppUpload = null; renderOpponent(); };
+  matchOpponent();
+}
+
+async function matchOpponent() {
+  const name = state.fields.opponent.toLowerCase();
+  const team = name && teamList.find((t) => t.name.toLowerCase() === name);
+  if (!team) { state.oppSaved = null; return renderOpponent(); }
+  if (state.oppSaved?.name === team.name) return;
+  if (!teamLogos.has(team.name)) teamLogos.set(team.name, loadLogo(team.logo));
+  try {
+    const asset = await teamLogos.get(team.name);
+    // Only if the opponent is still this team once the logo has loaded
+    if (state.fields.opponent.toLowerCase() === name) state.oppSaved = { asset, thumb: team.logo, bg: team.background, name: team.name };
+  } catch {
+    teamLogos.delete(team.name);
+  }
+  renderOpponent();
+}
+
+function renderOpponent() {
+  const op = state.oppUpload || state.oppSaved;
+  $('#oppSlot .team-pick').style.backgroundImage = op ? `url(${op.thumb})` : '';
+  $('#oppSlot').classList.toggle('filled', !!op);
+  $('#oppRemove').hidden = !state.oppUpload;
+  $('#oppHint').textContent = state.oppUpload ? 'Using a logo from this device. Tap × to go back.'
+    : state.oppSaved ? `Using the saved logo for ${state.oppSaved.name}.`
+    : 'Pick a saved team in Opponent and its logo appears here, or tap the circle to add one from this device.';
+  if (state.template === 'next-game') clearOutputs();
+  render();
+}
+
 function defaultHeadline() {
   return config.headlines?.[state.template] || TEMPLATES[state.template].name;
 }
@@ -451,7 +501,6 @@ function postData() {
     opponent: f.opponent,
     venue: f.venue,
     context: f.context,
-    stream: f.stream ? f.streamText || config.labels?.livestream || 'WATCH THE STREAM' : '',
     ourScore: f.ourScore,
     theirScore: f.theirScore,
     headline: f.headline,
@@ -476,6 +525,11 @@ function postData() {
   };
 }
 
+function oppAsset() {
+  const op = state.oppUpload || state.oppSaved;
+  return op ? { ...op.asset, bg: op.bg } : null;
+}
+
 function postOpts(group) {
   return {
     template: state.template,
@@ -485,6 +539,7 @@ function postOpts(group) {
     assets: {
       club: assets.club, backdrop: assets.backdrop, sponsor: assets.sponsors.get(state.sponsorName)?.asset || null, overlays: assets.overlays,
       teams: state.teams.filter((t) => t?.asset).map((t) => ({ ...t.asset, bg: t.bg })),
+      opponent: oppAsset(),
     },
   };
 }
@@ -773,7 +828,7 @@ function fileName(format, index) {
     'tournament': slug(f.headline) || 'tournament',
     'tournament-preview': slug(f.headline) || 'upcoming-tournament',
     'meet-team': slug(f.headline || defaultHeadline()).toLowerCase(),
-    'next-game': f.opponent ? `next-vs-${slug(f.opponent)}` : 'next-game',
+    'next-game': f.opponent ? `game-time-vs-${slug(f.opponent)}` : 'game-time',
   }[state.template] || (f.opponent ? `vs-${slug(f.opponent)}` : slug(f.headline) || state.template);
   const ext = state.fileType === 'png' ? 'png' : 'jpg';
   return `${f.date || todayISO()}_${label}_${format}_${String(index).padStart(2, '0')}.${ext}`;
@@ -899,9 +954,10 @@ function updateCaption() {
     ClubHashtag: (tags[0] || '').replace(/^#/, ''),
     Sport: (config.sport || '').replace(/\s+/g, ''),
   };
-  // The stream line goes in first, as its own sentence, so dropping sponsor sentences can't take it.
+  // Every game is streamed. The stream line goes in first, as its own sentence, so dropping sponsor sentences can't take it.
   const note = config.labels?.livestreamNote ? ` ${config.labels.livestreamNote}` : '';
-  let text = tplText.replace(/\[Stream\]\s*/g, f.stream ? `Can't make it? Watch the stream${note}! ` : '');
+  const where = config.labels?.youtubeUrl ? ` at ${config.labels.youtubeUrl}` : '';
+  let text = tplText.replace(/\[Stream\]\s*/g, `Can't make it? Watch live${where}${note}! `);
   // No sponsor: drop the sentences that mention one. A sponsor without a tier: drop the tier word.
   const dropSponsor = (t) => (t.match(/[^.!?]+[.!?]+\s*|[^.!?]+$/g) || []).filter((x) => !/\[(Sponsor|Tier)\]/.test(x)).join('');
   if (!sp) {
