@@ -11,7 +11,7 @@ const MAX_PHOTO_SIDE = 2560;   // photos are downscaled to this on load to keep 
 const JPG_QUALITY = 0.92;
 
 const FIELD_IDS = ['date', 'time', 'opponent', 'venue', 'ourScore', 'theirScore', 'headline', 'subtext', 'placing', 'record',
-  'p1Role', 'p1Name', 'p2Role', 'p2Name', 'p3Role', 'p3Name', 'collageCount', 'context',
+  'p1Role', 'p1Name', 'p2Role', 'p2Name', 'p3Role', 'p3Name', 'collageCount', 'context', 'sticker',
   'eyebrow', 'tySupport', 'tyTier', 'tyWord', 'tyMessage', 'season', 'logoBg', 'logoBgCustom', 'teamBg',
   'g1Time', 'g1Team', 'g2Time', 'g2Team', 'g3Time', 'g3Team', 'g4Time', 'g4Team'];
 const TEAM_SLOTS = 8;
@@ -37,6 +37,7 @@ const state = {
 state.fields.date = todayISO();
 state.fields.collageCount = '4';
 state.fields.logoBgCustom = '#ffffff';
+state.fields.sticker = 'yes';   // Game Time Story: empty stream bar for a link sticker
 
 const tpl = () => TEMPLATES[state.template];
 
@@ -206,12 +207,13 @@ function loadPrefs() {
   if (Object.values(out).some(Boolean)) state.out = out;
   if (p.fileType === 'png' || p.fileType === 'jpg') state.fileType = p.fileType;
   if (['2', '3', '4'].includes(p.collageCount)) state.fields.collageCount = p.collageCount;
+  if (p.sticker === '' || p.sticker === 'yes') state.fields.sticker = p.sticker;
 }
 
 function savePrefs() {
   storageSet(PREFS_KEY, {
     template: state.template, sponsorName: state.sponsorName, out: state.out,
-    fileType: state.fileType, collageCount: state.fields.collageCount,
+    fileType: state.fileType, collageCount: state.fields.collageCount, sticker: state.fields.sticker,
   });
 }
 
@@ -335,8 +337,10 @@ function bindFields() {
     const el = $(`#f-${id}`);
     if (el.type === 'checkbox') {
       // Checkbox fields hold 'yes' or ''.
+      el.checked = !!state.fields[id];
       el.addEventListener('change', () => {
         state.fields[id] = el.checked ? 'yes' : '';
+        if (id === 'sticker') savePrefs();
         updateCaption();
         render();
       });
@@ -519,6 +523,7 @@ function postData() {
     message: f.tyMessage || config.labels?.thankYouMessage || '',
     sponsorPlate: sp?.plate,
     teamBg: f.teamBg || '#FFFFFF',
+    sticker: !!f.sticker,
     // Pool play games with a time or an opponent, in the order entered
     pool: [1, 2, 3, 4].map((i) => ({ time: prettyTime(f[`g${i}Time`]), team: f[`g${i}Team`] })).filter((g) => g.time || g.team),
     logoBg: f.logoBg === 'custom' ? (f.logoBgCustom || '#ffffff') : f.logoBg || sponsorBackground(sp),

@@ -88,14 +88,14 @@ export const TEMPLATES = {
     desc: 'Our badge vs the opponent, start time, stream link',
     photos: 'none', noBadge: true,   // laid out like Upcoming Tournament: text-only header
     oneLine: true,                   // "GAME TIME" on one line, with the context line under it
-    fields: ['context', 'opponent', 'oppLogo', 'time'],
+    fields: ['context', 'opponent', 'oppLogo', 'time', 'sticker'],
     // Our badge vs the opponent's logo on the framed green panel, the start time under it.
-    // Every game is streamed: a stream bar at the bottom, under the sponsor. The Feed shows
-    // "WATCH LIVE | channel address"; on the Story the bar is taller and empty, ready for an
-    // Instagram link sticker (which says WATCH LIVE itself) to sit inside it.
+    // Every game is streamed: a stream bar at the bottom, under the sponsor, reading
+    // "WATCH LIVE | channel address". With the sticker box ticked, the Story's bar is taller and
+    // empty instead, ready for an Instagram link sticker (which says WATCH LIVE itself).
     draw(ctx, L, o, box) {
       const { s, brand } = L, d = o.data;
-      const story = L.fmt === 'story', barH = (story ? STICKER_ROW : STREAM_ROW) * s;
+      const sticker = L.fmt === 'story' && d.sticker, barH = (sticker ? STICKER_ROW : STREAM_ROW) * s;
       const gap = 46 * s;   // space between the time, the sponsor and the stream bar
       const infoH = 110 * s, linkH = gap + barH, spH = d.hasSponsor ? gap + SPONSOR_ROW * s : 0;
       const area = { x: box.x, y: box.y, w: box.w, h: box.h - infoH - linkH - spH - 30 * s };
@@ -108,8 +108,9 @@ export const TEMPLATES = {
       y += infoH;
       sponsorRow(ctx, L, o, y + gap);
       y += spH;
-      if (story) linkRow(ctx, L, y + gap, Math.min(box.w, 860 * s), '', '', barH);
-      else linkRow(ctx, L, y + gap, Math.min(box.w, 860 * s), brand.labels.nextGameStream || 'WATCH LIVE', brand.labels.youtubeUrl || '');
+      if (sticker) linkRow(ctx, L, y + gap, Math.min(box.w, 860 * s), '', '', barH);
+      else linkRow(ctx, L, y + gap, Math.min(box.w, 860 * s), brand.labels.nextGameStream || 'WATCH LIVE', brand.labels.youtubeUrl || '',
+        barH, brand.labels.youtubeNote || '');
     },
   },
 
@@ -895,8 +896,9 @@ function greenBox(ctx, L, x, y, w, h) {
 }
 
 // Stream bar: gold "WATCH LIVE", then (if given) a gold divider and the channel address,
-// centred as one group in the green bar. With no label it's an empty bar (for a sticker).
-function linkRow(ctx, L, y, w, label, url, h = STREAM_ROW * L.s) {
+// centred as one group in the green bar, with an optional small note under the address
+// (e.g. "(link in bio)"). With no label it's an empty bar (for a sticker).
+function linkRow(ctx, L, y, w, label, url, h = STREAM_ROW * L.s, note = '') {
   const { s, brand } = L, x = L.W / 2 - w / 2;
   ctx.save();
   roundRect(ctx, x, y, w, h, Math.min(h / 2, 52 * s));
@@ -915,17 +917,22 @@ function linkRow(ctx, L, y, w, label, url, h = STREAM_ROW * L.s) {
   const total = lw + (url ? gap * 2 + 2 * s + uw : 0), k = Math.min(1, room / total);
   lsize *= k; lsp *= k; usize *= k; lw *= k; uw *= k;
   let gx = L.W / 2 - total * k / 2;
-  const base = y + h / 2 + 9 * s * k;
+  const withNote = url && note, base = withNote ? y + h * 0.46 : y + h / 2 + 9 * s * k;
   ctx.fillStyle = brand.colors.accent;
-  spaced(ctx, L, label.toUpperCase(), gx, base, 'body', 600, lsize, lsp, 'left');
+  // The label stays vertically centred in the bar even when the address has a note under it
+  spaced(ctx, L, label.toUpperCase(), gx, withNote ? y + h / 2 + lsize * 0.36 : base, 'body', 600, lsize, lsp, 'left');
   if (url) {
     gx += lw + gap * k;
-    ctx.fillRect(gx, y + h * 0.3, 2 * s, h * 0.4);
+    ctx.fillRect(gx, withNote ? y + h * 0.18 : y + h * 0.3, 2 * s, h * (withNote ? 0.64 : 0.4));
     gx += 2 * s + gap * k;
     ctx.fillStyle = brand.colors.text;
     ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
     ctx.font = font(L, 'body', 500, usize);
     ctx.fillText(url, gx, base);
+    if (withNote) {
+      ctx.fillStyle = rgba(brand.colors.text, 0.75);
+      spaced(ctx, L, note, gx + uw / 2, base + 32 * s, 'body', 500, 20 * s * k, 1 * s, 'center');
+    }
   }
   ctx.restore();
 }
