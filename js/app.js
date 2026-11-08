@@ -12,6 +12,7 @@ const JPG_QUALITY = 0.92;
 
 const FIELD_IDS = ['date', 'time', 'opponent', 'venue', 'ourScore', 'theirScore', 'headline', 'subtext', 'placing', 'record',
   'p1Role', 'p1Name', 'p2Role', 'p2Name', 'p3Role', 'p3Name', 'collageCount', 'context', 'sticker',
+  's1Us', 's1Them', 's2Us', 's2Them', 's3Us', 's3Them',
   'eyebrow', 'tySupport', 'tyTier', 'tyWord', 'tyMessage', 'season', 'logoBg', 'logoBgCustom', 'teamBg',
   'g1Time', 'g1Team', 'g2Time', 'g2Team', 'g3Time', 'g3Team', 'g4Time', 'g4Team'];
 const TEAM_SLOTS = 8;
@@ -164,8 +165,9 @@ function loadOverlays() {
   }
 }
 
-// The chosen sponsor, or null for "No sponsor" (always allowed).
+// The chosen sponsor, or null for "No sponsor" (always allowed) or a template without one.
 function currentSponsor() {
+  if (tpl().noSponsor) return null;
   return sponsors.find((sp) => sp.name === state.sponsorName) || null;
 }
 
@@ -273,6 +275,7 @@ function applyTemplate() {
   document.querySelectorAll('#templatePicker button').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.template === state.template)));
   document.querySelectorAll('[data-field]').forEach((el) => { el.hidden = !t.fields.includes(el.dataset.field); });
   document.querySelectorAll('[data-opt-for]').forEach((el) => { el.hidden = !el.dataset.optFor.split(' ').includes(state.template); });
+  $('#sponsorCard').hidden = !!t.noSponsor;
   $('#headlineLabel').textContent = t.headline?.label || 'Headline';
   $('#f-headline').placeholder = !t.headline ? '' : t.headline.below ? t.headline.placeholder
     : `${t.headline.placeholder} (default: ${sentenceCase(defaultHeadline())})`;
@@ -487,7 +490,7 @@ function renderOpponent() {
   $('#oppHint').textContent = state.oppUpload ? 'Using a logo from this device. Tap × to go back.'
     : state.oppSaved ? `Using the saved logo for ${state.oppSaved.name}.`
     : 'Pick a saved team in Opponent and its logo appears here, or tap the circle to add one from this device.';
-  if (state.template === 'next-game') clearOutputs();
+  if (tpl().fields.includes('oppLogo')) clearOutputs();
   render();
 }
 
@@ -524,10 +527,24 @@ function postData() {
     sponsorPlate: sp?.plate,
     teamBg: f.teamBg || '#FFFFFF',
     sticker: !!f.sticker,
+    result: matchScore(),
     // Pool play games with a time or an opponent, in the order entered
     pool: [1, 2, 3, 4].map((i) => ({ time: prettyTime(f[`g${i}Time`]), team: f[`g${i}Team`] })).filter((g) => g.time || g.team),
     logoBg: f.logoBg === 'custom' ? (f.logoBgCustom || '#ffffff') : f.logoBg || sponsorBackground(sp),
   };
+}
+
+// Game Result: best of three. Sets with both scores entered count; TEAK wins with 2 sets.
+function matchSets() {
+  return [1, 2, 3].map((i) => [state.fields[`s${i}Us`], state.fields[`s${i}Them`]])
+    .filter(([a, b]) => a !== '' && b !== '').map(([a, b]) => [+a, +b]);
+}
+
+function matchScore() {
+  const sets = matchSets();
+  if (!sets.length) return { ours: '–', theirs: '–', win: false, detail: '' };
+  const won = sets.filter(([a, b]) => a > b).length, lost = sets.filter(([a, b]) => b > a).length;
+  return { ours: won, theirs: lost, win: won >= 2 && won > lost, detail: sets.map(([a, b]) => `${a}–${b}`).join('  ·  ') };
 }
 
 function oppAsset() {
@@ -834,6 +851,7 @@ function fileName(format, index) {
     'tournament-preview': slug(f.headline) || 'upcoming-tournament',
     'meet-team': slug(f.headline || defaultHeadline()).toLowerCase(),
     'next-game': f.opponent ? `game-time-vs-${slug(f.opponent)}` : 'game-time',
+    'game-result': f.opponent ? `result-vs-${slug(f.opponent)}` : 'game-result',
   }[state.template] || (f.opponent ? `vs-${slug(f.opponent)}` : slug(f.headline) || state.template);
   const ext = state.fileType === 'png' ? 'png' : 'jpg';
   return `${f.date || todayISO()}_${label}_${format}_${String(index).padStart(2, '0')}.${ext}`;
@@ -943,9 +961,12 @@ function updateCaption() {
   let tplText = list[state.captionIdx] || list[0] || '';
   const f = state.fields, sp = currentSponsor();
   const tags = config.hashtags || [];
+  const result = state.template === 'game-result' ? matchScore() : null;
   const values = {
     Opponent: f.opponent,
-    Score: f.ourScore !== '' || f.theirScore !== '' ? `${f.ourScore || '0'}–${f.theirScore || '0'}` : '',
+    Score: result ? (result.detail ? `${result.ours}–${result.theirs}` : '')
+      : f.ourScore !== '' || f.theirScore !== '' ? `${f.ourScore || '0'}–${f.theirScore || '0'}` : '',
+    Sets: result?.detail.replace(/\s+·\s+/g, ', '),
     Sponsor: sp?.name,
     Tier: (f.tyTier || sp?.tier)?.toLowerCase(),
     Date: prettyDate(f.date),

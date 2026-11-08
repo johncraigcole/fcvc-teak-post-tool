@@ -114,6 +114,22 @@ export const TEMPLATES = {
     },
   },
 
+  'game-result': {
+    name: 'Game Result',
+    desc: 'Our badge vs the opponent with the set scores. Gold burst when TEAK wins',
+    photos: 'none', noBadge: true, oneLine: true,
+    noSponsor: true,                 // no sponsor row, and the Sponsor step is hidden
+    fields: ['context', 'opponent', 'oppLogo', 'sets'],
+    // Laid out like Game Time, with the match score (sets won, best of three) under the logos and
+    // the set scores between them, all in the framed panel. A TEAK win adds a gold burst.
+    draw(ctx, L, o, box) {
+      const pad = 34 * L.s, d = o.data;
+      framedPanel(ctx, L, box);
+      matchup(ctx, L, o, { x: box.x + pad, y: box.y + pad, w: box.w - 2 * pad, h: box.h - 2 * pad },
+        [o.assets.opponent || null], d.opponent, d.result);
+    },
+  },
+
   'tournament': {
     compact: true,
     name: 'Tournament Result',
@@ -257,9 +273,12 @@ function thanksPanel(ctx, L, box, d) {
 // Club badge on the left, a gold VS, and the other teams' logos in circles on the right
 // (two columns when there are more than four). With no logos added, eight "TBA" circles.
 // teams: logos (null = empty circle). label: a single opponent's name, written inside an empty
-// circle, or under the circle when there's a logo.
-function matchup(ctx, L, o, r, teams, label = '') {
+// circle, or under the circle when there's a logo. score: { ours, theirs, win, detail } puts the
+// match score under the logos (Game Result).
+const SCORE_H = 190;   // room under the logos for the match score
+function matchup(ctx, L, o, r, teams, label = '', score = null) {
   const { s, brand } = L;
+  if (score) r = { ...r, h: r.h - SCORE_H * s };
   const named = teams.length === 1 && !!label;
   // With a backdrop logo the middle column widens to hold it, and the badge and team circles
   // get smaller to make room (the badge stays well over twice the size of a circle)
@@ -287,10 +306,11 @@ function matchup(ctx, L, o, r, teams, label = '') {
   const cy = r.y + r.h / 2, vx = r.x + r.w / 2;
   if (bd) backdrop(ctx, L, bd, vx, cy, bdSize, opt);
 
-  // Badge on a soft green glow
+  // Badge on a soft green glow, or a gold burst for a win
   const gx = r.x + half / 2;
+  if (score?.win) winBurst(ctx, L, gx, cy, club);
   const glow = ctx.createRadialGradient(gx, cy, 0, gx, cy, club * 0.62);
-  glow.addColorStop(0, rgba(brand.colors.primary, 0.75));
+  glow.addColorStop(0, rgba(score?.win ? brand.colors.accent : brand.colors.primary, score?.win ? 0.35 : 0.75));
   glow.addColorStop(1, rgba(brand.colors.primary, 0));
   ctx.fillStyle = glow;
   ctx.fillRect(gx - club * 0.62, cy - club * 0.62, club * 1.24, club * 1.24);
@@ -323,6 +343,65 @@ function matchup(ctx, L, o, r, teams, label = '') {
     ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
     name.lines.forEach((t, k) => ctx.fillText(t, tx + gridW / 2, ty + tile + 44 * s + k * name.size * 1.2));
   }
+
+  // Match score: each team's sets won under its logo (the winner's in gold), "FINAL" and the
+  // set scores between them
+  if (score) {
+    const ox = tx + gridW / 2, base = r.y + r.h + SCORE_H * s * 0.62, big = 120 * s;
+    const theyWon = !score.win && score.ours !== score.theirs && +score.theirs >= 2;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+    ctx.font = font(L, 'display', 700, big);
+    ctx.fillStyle = score.win ? brand.colors.accent : brand.colors.text;
+    ctx.fillText(String(score.ours), gx, base);
+    ctx.fillStyle = theyWon ? brand.colors.accent : brand.colors.text;
+    ctx.fillText(String(score.theirs), ox, base);
+    const mid = ox - gx - 200 * s;
+    ctx.fillStyle = brand.colors.accent;
+    spaced(ctx, L, 'FINAL', vx, base - big * 0.42, 'body', 600, 26 * s, 6 * s, 'center', mid);
+    if (score.detail) {
+      ctx.fillStyle = brand.colors.text;
+      spaced(ctx, L, score.detail, vx, base, 'body', 500, 26 * s, 1 * s, 'center', mid);
+    }
+  }
+}
+
+// A win: gold glow, soft rays and a few sparkles behind our badge.
+function winBurst(ctx, L, cx, cy, size) {
+  const { s, brand } = L, R = size * 0.8;
+  ctx.save();
+  const glow = ctx.createRadialGradient(cx, cy, size * 0.15, cx, cy, R);
+  glow.addColorStop(0, rgba(brand.colors.accent, 0.6));
+  glow.addColorStop(1, rgba(brand.colors.accent, 0));
+  ctx.fillStyle = glow;
+  ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.fill();
+  const rays = ctx.createRadialGradient(cx, cy, size * 0.3, cx, cy, R * 1.12);
+  rays.addColorStop(0, rgba(brand.colors.accent, 0.45));
+  rays.addColorStop(1, rgba(brand.colors.accent, 0));
+  ctx.fillStyle = rays;
+  for (let i = 0; i < 20; i++) {
+    const a = (i / 20) * Math.PI * 2, w = 0.07;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + Math.cos(a - w) * R * 1.12, cy + Math.sin(a - w) * R * 1.12);
+    ctx.lineTo(cx + Math.cos(a + w) * R * 1.12, cy + Math.sin(a + w) * R * 1.12);
+    ctx.closePath(); ctx.fill();
+  }
+  ctx.fillStyle = brand.colors.text;
+  for (const [dx, dy, r] of [[-0.6, -0.48, 16], [0.62, -0.4, 12], [0.56, 0.52, 18], [-0.52, 0.58, 11], [0.08, -0.7, 10]]) {
+    sparkle(ctx, cx + dx * size, cy + dy * size, r * s);
+  }
+  ctx.restore();
+}
+
+// Four-point star.
+function sparkle(ctx, x, y, r) {
+  ctx.beginPath();
+  ctx.moveTo(x, y - r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.quadraticCurveTo(x, y, x, y + r);
+  ctx.quadraticCurveTo(x, y, x - r, y);
+  ctx.quadraticCurveTo(x, y, x, y - r);
+  ctx.fill();
 }
 
 // A logo centred behind the VS, with a colour laid over just the logo so it reads as a
@@ -383,7 +462,7 @@ function teamCircle(ctx, L, a, cx, cy, rad, bg, name = '') {
 // Default headline text per template (config.headlines overrides).
 const DEFAULT_HEADLINES = {
   'game-day': 'FINAL SCORE', 'highlight': 'GAME HIGHLIGHT', 'collage': 'GAME DAY', 'meet-team': 'MEET THE TEAM',
-  'next-game': 'GAME TIME', 'tournament': 'TOURNAMENT RESULT', 'tournament-preview': 'UPCOMING TOURNAMENT',
+  'next-game': 'GAME TIME', 'game-result': 'GAME RESULT', 'tournament': 'TOURNAMENT RESULT', 'tournament-preview': 'UPCOMING TOURNAMENT',
   'thank-you': 'THANK YOU',
 };
 

@@ -145,6 +145,13 @@
             <div class="game"><input type="time" id="f-g3Time" aria-label="Game 3 time"><select id="f-g3Team" aria-label="Game 3 opponent"></select></div>
             <div class="game"><input type="time" id="f-g4Time" aria-label="Game 4 time"><select id="f-g4Team" aria-label="Game 4 opponent"></select></div>
           </div>
+          <div data-field="sets" class="sets">
+            <p class="muted small">Set scores (best of three; leave Set 3 blank if it wasn't played)</p>
+            <div class="set-row set-head"><span></span><span>Us</span><span></span><span>Them</span></div>
+            <div class="set-row"><span>Set 1</span><input type="text" id="f-s1Us" inputmode="numeric" maxlength="2" placeholder="25" aria-label="Set 1, our points"><span class="dash">–</span><input type="text" id="f-s1Them" inputmode="numeric" maxlength="2" placeholder="20" aria-label="Set 1, their points"></div>
+            <div class="set-row"><span>Set 2</span><input type="text" id="f-s2Us" inputmode="numeric" maxlength="2" placeholder="23" aria-label="Set 2, our points"><span class="dash">–</span><input type="text" id="f-s2Them" inputmode="numeric" maxlength="2" placeholder="25" aria-label="Set 2, their points"></div>
+            <div class="set-row"><span>Set 3</span><input type="text" id="f-s3Us" inputmode="numeric" maxlength="2" placeholder="15" aria-label="Set 3, our points"><span class="dash">–</span><input type="text" id="f-s3Them" inputmode="numeric" maxlength="2" placeholder="12" aria-label="Set 3, their points"></div>
+          </div>
           <div data-field="score" class="score-row">
             <label>Our score <input type="text" id="f-ourScore" inputmode="numeric" maxlength="3" placeholder="3"></label>
             <span class="dash">–</span>

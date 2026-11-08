@@ -47,6 +47,7 @@
     "collage": "GAME DAY",
     "meet-team": "MEET THE COACHES",
     "next-game": "GAME TIME",
+    "game-result": "GAME RESULT",
     "tournament": "TOURNAMENT RESULT",
     "tournament-preview": "UPCOMING TOURNAMENT",
     "thank-you": "THANK | YOU"
@@ -72,6 +73,10 @@
     "next-game": [
       "Next up: [Opponent] at [Time]. Come cheer us on! [Stream] Presenting sponsor: [Sponsor]. [Hashtags] #[Sport]",
       "Game day is coming! TEAK vs [Opponent] at [Time]. [Stream] [Hashtags]"
+    ],
+    "game-result": [
+      "Final vs [Opponent]: [Score] ([Sets]). So proud of this team! [Hashtags] #[Sport]",
+      "Match result: TEAK [Score] [Opponent]. [Hashtags]"
     ],
     "tournament": [
       "[Headline]: [Placing]! Record [Record]. So proud of this team. Thanks to [Sponsor] for the support. [Hashtags] #[Sport]",
