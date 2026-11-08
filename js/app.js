@@ -11,7 +11,7 @@ const MAX_PHOTO_SIDE = 2560;   // photos are downscaled to this on load to keep 
 const JPG_QUALITY = 0.92;
 
 const FIELD_IDS = ['date', 'time', 'opponent', 'venue', 'ourScore', 'theirScore', 'headline', 'subtext', 'placing', 'record',
-  'p1Role', 'p1Name', 'p2Role', 'p2Name', 'p3Role', 'p3Name', 'collageCount', 'context', 'sticker',
+  'p1Role', 'p1Name', 'p2Role', 'p2Name', 'p3Role', 'p3Name', 'collageCount', 'context', 'sticker', 'streamUrl',
   's1Us', 's1Them', 's2Us', 's2Them', 's3Us', 's3Them',
   'eyebrow', 'tySupport', 'tyTier', 'tyWord', 'tyMessage', 'season', 'logoBg', 'logoBgCustom', 'teamBg',
   'g1Time', 'g1Team', 'g2Time', 'g2Team', 'g3Time', 'g3Team', 'g4Time', 'g4Team'];
@@ -327,6 +327,7 @@ function bindFields() {
   // Pool play opponents come from the saved team list
   const teamOpts = '<option value="">Opponent…</option>' + teamList.map((t) => `<option value="${esc(t.name)}">${esc(t.name)}</option>`).join('');
   [1, 2, 3, 4].forEach((i) => { $(`#f-g${i}Team`).innerHTML = teamOpts; });
+  $('#f-streamUrl').placeholder = config.labels?.youtubeUrl || '';
   $('#teamNames').innerHTML = teamList.map((t) => `<option value="${esc(t.name)}">`).join('');
   // Sponsor Thank-You text boxes show the default wording they'll use if left blank
   const lb = config.labels || {};
@@ -527,6 +528,7 @@ function postData() {
     sponsorPlate: sp?.plate,
     teamBg: f.teamBg || '#FFFFFF',
     sticker: !!f.sticker,
+    streamUrl: f.streamUrl || config.labels?.youtubeUrl || '',   // Game Time: this game's stream, else the channel
     result: matchScore(),
     // Pool play games with a time or an opponent, in the order entered
     pool: [1, 2, 3, 4].map((i) => ({ time: prettyTime(f[`g${i}Time`]), team: f[`g${i}Team`] })).filter((g) => g.time || g.team),
@@ -982,7 +984,7 @@ function updateCaption() {
   };
   // Every game is streamed. The stream line goes in first, as its own sentence, so dropping sponsor sentences can't take it.
   const note = config.labels?.livestreamNote ? ` ${config.labels.livestreamNote}` : '';
-  const where = config.labels?.youtubeUrl ? ` at ${config.labels.youtubeUrl}` : '';
+  const url = f.streamUrl || config.labels?.youtubeUrl, where = url ? ` at ${url}` : '';
   let text = tplText.replace(/\[Stream\]\s*/g, `Can't make it? Watch live${where}${note}! `);
   // No sponsor: drop the sentences that mention one. A sponsor without a tier: drop the tier word.
   const dropSponsor = (t) => (t.match(/[^.!?]+[.!?]+\s*|[^.!?]+$/g) || []).filter((x) => !/\[(Sponsor|Tier)\]/.test(x)).join('');

@@ -88,7 +88,7 @@ export const TEMPLATES = {
     desc: 'Our badge vs the opponent, start time, stream link',
     photos: 'none', noBadge: true,   // laid out like Upcoming Tournament: text-only header
     oneLine: true,                   // "GAME TIME" on one line, with the context line under it
-    fields: ['context', 'opponent', 'oppLogo', 'time', 'sticker'],
+    fields: ['context', 'opponent', 'oppLogo', 'time', 'streamUrl', 'sticker'],
     // Our badge vs the opponent's logo on the framed green panel, the start time under it.
     // Every game is streamed: a stream bar at the bottom, under the sponsor, reading
     // "WATCH LIVE | channel address". With the sticker box ticked, the Story's bar is taller and
@@ -109,7 +109,7 @@ export const TEMPLATES = {
       sponsorRow(ctx, L, o, y + gap);
       y += spH;
       if (sticker) linkRow(ctx, L, y + gap, Math.min(box.w, 860 * s), '', '', barH);
-      else linkRow(ctx, L, y + gap, Math.min(box.w, 860 * s), brand.labels.nextGameStream || 'WATCH LIVE', brand.labels.youtubeUrl || '',
+      else linkRow(ctx, L, y + gap, Math.min(box.w, 860 * s), brand.labels.nextGameStream || 'WATCH LIVE', d.streamUrl,
         barH, brand.labels.youtubeNote || '');
     },
   },
