@@ -1,5 +1,6 @@
 [
   { "name": "Spark Power", "logo": "logos/spark-power.png", "tier": "Silver", "active": true, "background": "#FFFFFF" },
   { "name": "Riverside Concrete Forming", "logo": "logos/riverside-concrete-forming.png", "tier": "Silver", "active": true, "background": "transparent", "plate": "dark" },
-  { "name": "Dental Arts Centre", "logo": "logos/dental-arts-centre.png", "tier": "Bronze", "active": true, "background": "#FFFFFF" }
+  { "name": "Dental Arts Centre", "logo": "logos/dental-arts-centre.png", "tier": "Bronze", "active": true, "background": "#FFFFFF" },
+  { "name": "BHG Orthodontics", "logo": "logos/bhg-orthodontics.png", "tier": "Bronze", "active": true, "background": "#FFFFFF" }
 ]
