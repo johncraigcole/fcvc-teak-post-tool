@@ -65,6 +65,7 @@ async function init() {
   buildTemplatePicker();
   buildSponsorSelect();
   bindFields();
+  bindDefaultButtons();
   bindTeams();
   bindOpponent();
   bindPreview();
@@ -284,6 +285,7 @@ function applyTemplate() {
   $('#f-subtext').placeholder = tourney ? 'e.g. May 15–17 · Mississauga' : 'Leave blank to show opponent and date';
   $('#venueLabel').textContent = state.template === 'tournament-preview' ? 'Location' : 'Venue';
   $('#photoCard').hidden = t.photos === 'none';
+  refreshDefaultButtons();
   buildCaptionPick();
   updateCaption();
   renderThumbs();
@@ -300,7 +302,50 @@ function buildSponsorSelect() {
     savePrefs();
     updateCaption();
     ensureSponsorLogo();
+    refreshDefaultButtons();
   };
+}
+
+// The wording each text box falls back to when left blank (what the post draws), or '' if none.
+const FIELD_DEFAULTS = {
+  headline: () => (tpl().headline && !tpl().headline.below ? defaultHeadline() : ''),
+  eyebrow: () => config.labels?.eyebrow || '',
+  tySupport: () => config.labels?.supportLine || '',
+  tyTier: () => currentSponsor()?.tier || '',
+  tyWord: () => config.labels?.sponsorWord || 'SPONSOR',
+  tyMessage: () => config.labels?.thankYouMessage || '',
+  season: () => config.labels?.season || '',
+};
+
+// "Use default" buttons: copy the default wording into an empty box so it can be edited.
+function bindDefaultButtons() {
+  for (const id of Object.keys(FIELD_DEFAULTS)) {
+    const el = $(`#f-${id}`);
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'use-default';
+    btn.dataset.defaultFor = id;
+    btn.textContent = 'Use default';
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();   // the button sits inside the field's <label>
+      el.value = FIELD_DEFAULTS[id]();
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+      el.focus();
+    });
+    el.insertAdjacentElement('afterend', btn);
+    el.addEventListener('input', refreshDefaultButtons);
+  }
+  refreshDefaultButtons();
+}
+
+// A button is only offered while its box is empty and there is a default to copy in.
+function refreshDefaultButtons() {
+  document.querySelectorAll('.use-default').forEach((btn) => {
+    const id = btn.dataset.defaultFor, def = FIELD_DEFAULTS[id]();
+    btn.hidden = !def;
+    btn.disabled = !!$(`#f-${id}`).value.trim();
+    btn.title = def ? `Fill in: ${def}` : '';
+  });
 }
 
 // Logo box background choices for the Sponsor Thank-You post (colours from config.json).

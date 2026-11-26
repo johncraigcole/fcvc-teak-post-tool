@@ -113,6 +113,14 @@ label.inline { margin-top: 12px; }
 .score-row label { display: grid; gap: 4px; font-size: 0.9rem; font-weight: 600; }
 .score-row input { text-align: center; font-size: 1.3rem; font-weight: 700; }
 .dash { padding-bottom: 10px; font-weight: 700; }
+/* "Use default" under a text box: copies the default wording in so it can be edited. */
+.use-default {
+  justify-self: start; padding: 4px 0; border: 0; background: none;
+  font: inherit; font-size: 0.82rem; font-weight: 600; color: var(--primary);
+  text-decoration: underline; text-underline-offset: 2px; cursor: pointer;
+}
+.use-default:disabled { color: var(--muted); text-decoration: none; cursor: default; }
+.score-row .use-default { justify-self: center; }
 
 .seg { display: grid; gap: 8px; }
 .seg button {
